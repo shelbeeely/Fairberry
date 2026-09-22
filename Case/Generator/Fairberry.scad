@@ -5,8 +5,9 @@
 SCREEN_PROTECTOR_HEIGHT=0.6; // Thickness of the screen protector
 EXTRUSION_WIDTH=0.48; // Extrusion width of your 3D printer
 
-// Uncomment the type of phone you use. If your phone doesn't appear in this list, leave "include <presets/Custom.scad>" and edit the file at presets/Custom.scad to fit your phone.
-include <presets/Custom.scad>
+// Uncomment the type of device you use. If your device doesn't appear in this list, leave "include <presets/Custom.scad>" and edit the file at presets/Custom.scad to fit your device.
+//include <presets/Custom.scad>
+include <presets/XteinkX4.scad>
 //include <presets/SamsungGalaxyA54.scad>
 //include <presets/Fairphone4.scad>
 

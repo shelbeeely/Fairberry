@@ -1,5 +1,9 @@
 # This information is outdated. The newer hardware version can be found [here](https://github.com/Dakkaron/Fairberry/blob/main/Documentation/Hardware_Fairberry_Mainboard.md)
 
+# Note (this fork)
+
+This page still talks about attaching the keyboard to a phone, since it's kept largely as-is from upstream. Everything below applies the same way if you're building this for an e-ink device instead â€” see [Hardware_Fairberry_Mainboard.md](Hardware_Fairberry_Mainboard.md#connecting-to-a-free-ink-sdk-device-eg-xteink-x4) for the e-ink-specific notes (BLE vs. USB, host-support caveats, case preset).
+
 ## How is it working?
 
 ![Underside of the electronics](https://github.com/Dakkaron/Fairberry/raw/main/Images/electronics_underside.jpeg)
@@ -7,7 +11,7 @@
 
 There are five parts to the Fairberry keyboard:
 
-- A BlackBerry Q10 replacement keyboard from Aliexpress (~€10-15 plus shipping)
+- A BlackBerry Q10 replacement keyboard from Aliexpress (~ï¿½10-15 plus shipping)
 - The BlackBerry Q10 Keyboard Breakout Board from here: https://github.com/arturo182/bbq10kbd_breakout
 - An Arduino Pro Micro (Micro, not Mini! This is very important since the Pro Mini does not have USB interface that can be used to emulate a keyboard!)
 - An USB C or Micro USB OTG breakout board or cable to connect to the phone

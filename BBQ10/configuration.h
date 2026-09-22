@@ -6,7 +6,7 @@
  * FAIRBERRY_V0_1_1 : This is the custom mainboard, version 0.1.1
  * ARDUINO : The original option, using an Arduino Pro Micro
  * BEETLE : A slightly different version of the original option, using a smaller Beetle board based on the ATMega32u4. Not recommeded, because the beetle has one to few pins, so you have to solder directly to the ATMega32u4.
- * ESP32: Using an ESP32-based board to couple the board using Bluetooth. Not recommended, because the power options don't really work right now, and it consumes a lot of power.
+ * ESP32: Using an ESP32-based board to couple the board using Bluetooth. Power management is still rough (see the power saving options below) and it draws more current than the Arduino path. This is the option to use if your host device doesn't have USB host support but does accept BLE HID keyboards -- e.g. this is the path being explored for Free Ink SDK devices like the Xteink X4, since it's currently unclear whether any Free Ink SDK target exposes USB HID host mode. Confirm BLE HID keyboard support on your target device before committing to this path.
  */
 #define BOARD_TYPE FAIRBERRY_V0_3_0
 

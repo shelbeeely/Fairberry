@@ -1,3 +1,14 @@
+# Connecting to a Free Ink SDK device (e.g. Xteink X4)
+
+This fork targets e-ink readers instead of phones — see the [README](../README.md) for why, and for the current status of keyboard-host support on the Free Ink SDK side. In short: the mainboard doesn't change based on what it's plugged into, but which `BOARD_TYPE` you pick in `configuration.h` determines *how* it presents itself as a keyboard:
+
+- `FAIRBERRY_V0_3_0` (or another custom-mainboard version) / `ARDUINO`: presents as a standard **USB HID** keyboard over the OTG cable. Whether your reader accepts this depends on whether its firmware runs USB in host mode — for an ESP32-S3-based reader like the Xteink X4 Classic the hardware is capable of it, but you need to confirm the firmware actually exposes USB HID host support before counting on this.
+- `ESP32`: presents as a **Bluetooth LE HID** keyboard instead of a USB one, no cable needed. This needs the reader's firmware to have generic BLE HID keyboard host support, which is not something I've confirmed exists in Free Ink SDK yet (see the README's Status section).
+
+Either way, the matrix-scanning and key-combo behavior described in [UX_Shortcuts_and_Apps.md](UX_Shortcuts_and_Apps.md) is identical regardless of the host device, since it all happens in the mainboard's own firmware before anything is sent out.
+
+For the case, see the [Xteink X4 preset](../Case/Generator/presets/XteinkX4.scad) instead of the phone presets referenced later in this document — swap the `include` line in `Fairberry.scad` accordingly.
+
 # Bill of Materials
 
 - Blackberry Q10 replacement keyboard
@@ -138,7 +149,7 @@ If you get an error, verify your soldering.
 
 # Testing
 
-Now you are basically done. To test the mainboard, connect the Blackberry Q10 keyboard to the connector and plug the whole thing into the USB/Lightning port of your phone. Open some app where you can type and check if every key works as expected.
+Now you are basically done. To test the mainboard, connect the Blackberry Q10 keyboard to the connector and plug the whole thing into the USB port of your device (or, for `BOARD_TYPE ESP32`, pair it over Bluetooth). Open something where you can type and check if every key works as expected. If nothing types at all, that's the host-side keyboard support question from the top of this document, not a hardware fault — first confirm the device accepts input from *any* external USB/BLE HID keyboard before troubleshooting the Fairberry mainboard itself.
 
 ## Troubleshooting
 
@@ -158,9 +169,10 @@ If you know which pin is at fault, try to carefully solder it on with a fine-tip
 ### Customizing
 - In the `Fairberry.scad` script, set the `SCREEN_PROTECTOR_HEIGHT` to the thickness of your screen protector. If you don't use one, set it to `0`.
 - Set the `EXTRUSION_WIDTH` to the extrusion width of your 3D printer. For 0.4mm nozzles, it's usually 0.48. If you use a resin printer, leave it at 0.4.
-- If you are using a Fairphone 4 or a Samsung Galaxy A54, comment out the line `include <presets/Custom.scad>` by placing a double slash (`//`) at the beginning of the line, and uncomment the line fitting your phone. You can skip the rest of the customization.
-- If you are using a different phone, open up `Fairberry-x.x.x/Case/Generator/presets/Custom.scad` in OpenSCAD and customize the values in there to your liking. To preview the changes, save your changes in the `Custom.scad` and then open up `Fairberry.scad` in OpenSCAD and press F5 to generate a preview.
-- When using `Custom.scad`, it is recommended to find a dummy STL of your phone. [Yeggi.com](https://www.yeggi.com/) and [Grabcad](https://grabcad.com/) are good sources for dummy phone models.
+- If you are using an Xteink X4, keep `include <presets/XteinkX4.scad>` uncommented (this is the default in this fork). Read the warning comment at the top of that file first — the dimensions are unverified against a physical device, so treat the first print as a test fit.
+- If you are using a Fairphone 4 or a Samsung Galaxy A54, comment out the active `include` line and uncomment the line fitting your phone instead. You can skip the rest of the customization.
+- If you are using a different device, open up `Fairberry-x.x.x/Case/Generator/presets/Custom.scad` in OpenSCAD and customize the values in there to your liking. To preview the changes, save your changes in the `Custom.scad` and then open up `Fairberry.scad` in OpenSCAD, comment in its `include` line and comment out any other preset's, and press F5 to generate a preview.
+- When using `Custom.scad`, it is recommended to find a dummy STL of your device. [Yeggi.com](https://www.yeggi.com/) and [Grabcad](https://grabcad.com/) are good sources for dummy models.
 
 ### Generating the file
 - Once everything is customized to your liking, open `Fairberry.scad` and press F5 to generate a preview.
@@ -199,7 +211,7 @@ Put the M3 screws through the hole in the case and place the USB connector into 
 
 ![Preparing USB connector](https://github.com/Dakkaron/Fairberry/blob/main/Images/usb_connector_prepared.jpg)
 
-Put the M3 nuts into the holes in the USB clamp and screw it down. To help aligining the USB connector, place your phone into the attachment and plug the USB connector into the phone, before screwing it down. This makes sure that the USB corrector is aligned correctly.
+Put the M3 nuts into the holes in the USB clamp and screw it down. To help aligining the USB connector, place your device into the attachment and plug the USB connector into it, before screwing it down. This makes sure that the USB corrector is aligned correctly.
 Also put a thin roll of Blu-Tack/Patafix on the top part of the area where the keyboard goes.
 
 ![Preparing USB connector](https://github.com/Dakkaron/Fairberry/blob/main/Images/usb_screwed_down.jpg)

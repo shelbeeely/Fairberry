@@ -1,10 +1,18 @@
-# Keyboard layout on the phone
+# Which parts of this page apply to e-ink devices?
+
+Everything the mainboard firmware does — cursor mode, sticky modifiers, dead keys, backlight brightness — happens before anything leaves the keyboard, so it applies the same way no matter what it's plugged into. That's the "Built-in key combinations" section below.
+
+Everything below "Adding key combinations" is Android-specific (it relies on Android apps like Key Mapper and Automate, and on `adb`), and won't apply to a Free Ink SDK device. What key-remapping or shortcut options exist on the reader side is currently unknown/untested — if you figure something out for a Free Ink SDK device, that's worth documenting here or upstream in [freeink-sdk](https://github.com/Free-Ink/freeink-sdk).
+
+# Keyboard layout on Android phones
 
 The Fairberry requires you to set the layout to be set to "English (USA), international".
 
 The reasons are
 - It allows for accented letters that should cover many languages quite well.
 - Some Android versions (at least up to Android 12) have a bug that the system forces this layout if you use accessibility services.
+
+This section doesn't apply outside of Android — a Free Ink SDK device's keyboard layout handling (if any) hasn't been documented here yet.
 
 # Built-in key combinations
 
