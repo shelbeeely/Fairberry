@@ -13,6 +13,8 @@ Two independent pieces of firmware, paired over BLE:
 
 They're linked at the protocol level (BLE HID) and at the build-flag level: the X4 firmware needs `FREEINK_CAP_BLE_HID_HOST=1` and the NimBLE dependency enabled, exactly as documented in the [main README's Status section](../README.md#status--known-limitation) and reproduced in `X4Firmware/platformio.ini`.
 
+They can also be physically joined into one device instead of two BLE-paired pieces -- see [Case/WriterDeck/](../Case/WriterDeck) for a combined clamshell case, built by reusing a real interlocking hinge mechanism from a user-provided reference model rather than designing one from scratch. Electronics stay independent (separate boards, separate batteries, still talking over BLE) -- it's purely a shared enclosure.
+
 ## Setup
 
 1. Clone `shelbeeely/freeink-sdk` next to this repo (or adjust the path in `X4Firmware/platformio.ini`'s `lib_deps`).

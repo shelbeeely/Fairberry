@@ -73,6 +73,8 @@ Demo video of the original phone version: [![Demo video showing the functionalit
 
 For these simpler, host-attached builds only (not the standalone smart keyboard, which has no case yet), there's a case preset: [Xteink X4 preset](Case/Generator/presets/XteinkX4.scad), built from width/thickness measured off a community-made, to-scale device model ([Zorian22's "Xteink X4 device model" on Thingiverse](https://www.thingiverse.com/thing:7287950), 114.2 x 69.2 x 6.2mm) rather than just the rounded marketing spec — better, but still not a full match to the real device shape. The preset file has step-by-step instructions for swapping in that actual dummy model file for a proper fit instead of the parametric approximation; I couldn't fetch it automatically since Thingiverse's terms block bots, so that step needs a normal browser download on your end. Print a bottom-only test fit before committing to a full case either way. The original phone presets (Fairphone 4, Samsung Galaxy A54) are still in the repo under `Case/Generator/presets/` for reference.
 
+**Writer deck combined case**: [Case/WriterDeck/](Case/WriterDeck) -- a single clamshell enclosing both the keyboard and the X4 as one physical device, reusing a real interlocking hinge mechanism extracted from a user-provided reference model rather than designed from scratch. First-draft OpenSCAD, not print-tested -- see that directory's README for exactly what's confirmed-real (the hinge geometry, the keyboard module dimensions) versus still a placeholder (tray cavity depth, trackball position).
+
 ## How to use it?
 
 [Key combinations and apps](Documentation/UX_Shortcuts_and_Apps.md)
