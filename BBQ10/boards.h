@@ -248,23 +248,30 @@
   // charger/supervisor IC's digital low-battery output instead of
   // continuous ADC voltage sensing -- a real capability reduction from
   // the "know the battery percentage" goal in the BOM doc, not a free
-  // substitution. A fuel gauge over I2C (2 pins, doesn't need an
-  // ADC-capable pin) would restore percentage-level monitoring -- unlike
-  // an earlier draft of this comment claimed, this board doesn't
-  // actually use the module's real UART0 (the pins named RXD0/TXD0 on
-  // the KiCad symbol, i.e. GPIO43/44) for anything; those were free the
-  // whole time and are the natural place to add an I2C fuel gauge in a
-  // follow-up revision, at the cost of losing UART0 serial debug/flash
-  // (native USB on 19/20 would remain as the flashing path).
+  // substitution. A fuel gauge over I2C would restore percentage-level
+  // monitoring in a follow-up revision without costing a pin.
   #define BATTERY_LOW_PIN 21
 
   // Mic (I2S MEMS mic, e.g. ICS-43434 -- see the KiCad schematic; more
   // readily available with a real KiCad symbol than the INMP441
   // originally specified in the BOM doc, electrically the same kind of
   // part) -- dedicated I2S port, own clock lines.
-  #define MIC_I2S_WS_PIN 35
-  #define MIC_I2S_BCLK_PIN 36
-  #define MIC_I2S_DIN_PIN 37
+  //
+  // This BOM specs the octal-PSRAM SKU (ESP32-S3-WROOM-1-N16R8, 8MB PSRAM)
+  // for headroom on audio buffers/WiFi/the web dashboard. On that SKU,
+  // GPIO35/36/37 are wired internally to the in-package PSRAM and are not
+  // usable as GPIO (true of any Octal-PSRAM WROOM-1 SKU, not specific to
+  // N16R8) -- so mic I2S can't live there like an earlier draft of this
+  // board had it. It's moved onto GPIO43/44 (silkscreened RXD0/TXD0,
+  // i.e. UART0) instead, which cost nothing: this board's serial
+  // console/flashing already goes over native USB (GPIO19/20, USB_DM/DP),
+  // not UART0, so those two pins were unused. The third pin (DIN, an
+  // input) goes on GPIO46 -- a strapping pin, but safe for this because
+  // it only matters as an input during a bootloader-mode reset, and the
+  // mic's SD output isn't driving that pin at boot.
+  #define MIC_I2S_WS_PIN 43
+  #define MIC_I2S_BCLK_PIN 44
+  #define MIC_I2S_DIN_PIN 46
 
   // Speaker (MAX98357A-style I2S amp) -- separate I2S port from the mic,
   // not sharing clock lines (simpler/lower-risk than a shared-clock

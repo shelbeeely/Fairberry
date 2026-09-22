@@ -40,13 +40,21 @@ esp32_net = {
     'IO14': 'KBD_BACKLIGHT_DRV',
     'IO15': 'TRACKBALL_UP', 'IO16': 'TRACKBALL_DOWN', 'IO17': 'TRACKBALL_LEFT', 'IO18': 'TRACKBALL_RIGHT',
     'IO21': 'BATTERY_LOW',
-    'IO35': 'MIC_WS', 'IO36': 'MIC_BCLK', 'IO37': 'MIC_DIN',
     'IO38': 'SPEAKER_WS', 'IO39': 'SPEAKER_BCLK', 'IO40': 'SPEAKER_DOUT',
     'IO41': 'SD_CLK', 'IO42': 'SD_CMD', 'IO47': 'SD_D0',
     'IO48': 'TRACKBALL_BTN',
     'IO19': 'USB_DM', 'IO20': 'USB_DP',
-    'IO0': None, 'IO3': None, 'IO45': None, 'IO46': None,  # strapping pins, left NC
-    'RXD0': None, 'TXD0': None,  # free UART0, unused in this revision (see doc)
+    # Mic I2S deliberately avoids IO35/36/37: on the octal-PSRAM SKU this
+    # board is speced for (WROOM-1-N16R8), those three pins are internally
+    # wired to the in-package PSRAM and are not usable as GPIO. TXD0/RXD0
+    # are free to reuse for the WS/BCLK outputs because this board's debug
+    # console runs over the native USB-C port (USB_DM/USB_DP, IO19/IO20) via
+    # USB CDC, not UART0 -- see README. IO46 is a strapping pin but is safe
+    # to use for MIC_DIN (an input) as long as nothing pulls it high during
+    # a bootloader-mode reset, which the mic's SD line does not.
+    'TXD0': 'MIC_WS', 'RXD0': 'MIC_BCLK', 'IO46': 'MIC_DIN',
+    'IO35': None, 'IO36': None, 'IO37': None,  # consumed internally by octal PSRAM on the N16R8 SKU
+    'IO0': None, 'IO3': None, 'IO45': None,  # strapping pins, left NC
 }
 components.append(dict(ref='U1', lib_id='RF_Module:ESP32-S3-WROOM-1', x=140, y=140, value='ESP32-S3-WROOM-1', net=esp32_net))
 

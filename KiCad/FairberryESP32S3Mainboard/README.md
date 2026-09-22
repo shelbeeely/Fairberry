@@ -9,6 +9,26 @@ Connectivity uses net labels (`(label "NETNAME" ...)`) on short wire stubs at
 each pin rather than routed point-to-point wires, which is standard KiCad
 practice for pin-dense boards and keeps the sheet readable.
 
+## Module SKU: ESP32-S3-WROOM-1-N16R8
+
+The schematic symbol (`RF_Module:ESP32-S3-WROOM-1`) is generic across every
+WROOM-1 flash/PSRAM SKU — the pinout is identical. For the BOM, this board
+specs the **-N16R8** variant (16MB flash, 8MB octal PSRAM) for headroom on
+audio buffers, the web dashboard, and WiFi/TLS.
+
+That choice has one real consequence: on any *octal*-PSRAM WROOM-1 SKU
+(anything ending `R8` or `R16V`), GPIO35/36/37 are wired internally to the
+in-package PSRAM and can't be used as GPIO — they simply don't work as
+signal pins, even though the generic symbol still draws them. A cheaper
+*quad*-PSRAM SKU (`R2`, e.g. -N16R2, 2MB PSRAM) wouldn't have this
+restriction and would need no pin changes, at the cost of much less RAM.
+Having picked -N16R8, mic I2S was moved off GPIO35-37 onto GPIO43/44
+(silkscreened RXD0/TXD0, i.e. UART0 — free because this board's console
+runs over native USB, not UART0) and GPIO46 (a strapping pin, safe here
+since MIC_DIN is an input and the mic's output doesn't drive that pin
+during a bootloader-mode reset). See the comment above
+`MIC_I2S_WS_PIN` in `BBQ10/boards.h` for the full reasoning.
+
 ## Known simplifications (not yet fab-ready)
 
 - **J6 (USB)**: a plain 4-pin header standing in for a real USB-C receptacle.
