@@ -54,7 +54,7 @@ Recommended: [Custom mainboard](Documentation/Hardware_Fairberry_Mainboard.md) �
 
 [Old Arduino-based hardware](Documentation/Hardware_Arduinobased.md) also works, same caveats apply.
 
-For the case, use the [Xteink X4 preset](Case/Generator/presets/XteinkX4.scad) as a starting point — see the note at the top of that file, it's built from published X4 dimensions and has **not** been verified against a physical device yet. The original phone presets (Fairphone 4, Samsung Galaxy A54) are still in the repo under `Case/Generator/presets/` in case they're useful as a reference for another device.
+For the case, use the [Xteink X4 preset](Case/Generator/presets/XteinkX4.scad) as a starting point. It now uses width/thickness measured from a community-made, to-scale device model ([Zorian22's "Xteink X4 device model" on Thingiverse](https://www.thingiverse.com/thing:7287950), 114.2 x 69.2 x 6.2mm) rather than just the rounded marketing spec — better, but still not a full match to the real device shape (button geometry, exact bezel/port position). The preset file has step-by-step instructions for swapping in that actual dummy model file for a proper fit instead of the parametric approximation; I couldn't fetch it automatically since Thingiverse's terms block bots, so that step needs a normal browser download on your end. Print a bottom-only test fit before committing to a full case either way. The original phone presets (Fairphone 4, Samsung Galaxy A54) are still in the repo under `Case/Generator/presets/` in case they're useful as a reference for another device.
 
 ## How to use it?
 
