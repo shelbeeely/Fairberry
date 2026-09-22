@@ -99,3 +99,22 @@
  * Enables serial debug logging. Only activate when debugging.
  */
 //#define SERIAL_DEBUG_LOG
+
+/*
+ * ## Trackball (ICSH044A / SparkFun BlackBerry Trackballer Breakout clone)
+ * Only implemented for BOARD_TYPE ESP32 right now. See boards.h for the
+ * pin assignment and trackball.h for the reading/debounce logic, and
+ * Documentation/Hardware_ESP32_Trackball_Mainboard.md for wiring/BOM
+ * details (pull-up resistors, LED current-limiting, physical mounting).
+ *
+ * Movement is read as raw hall-sensor edges and turned into arrow-key
+ * taps once TRACKBALL_EDGES_PER_STEP edges accumulate on an axis; the
+ * center click sends TRACKBALL_BTN_KEY (both configurable below, or left
+ * at their defaults in trackball.h). This hasn't been validated against
+ * real hardware yet -- treat the pin map and thresholds as a starting
+ * point, not a tested value.
+ */
+//#define TRACKBALL_ENABLED
+//#define TRACKBALL_LED_ENABLED // Also drive the trackball's RGB backlight
+//#define TRACKBALL_EDGES_PER_STEP 4
+//#define TRACKBALL_BTN_KEY KEY_RETURN

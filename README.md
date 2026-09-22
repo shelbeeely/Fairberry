@@ -2,7 +2,7 @@
 
 This is a personal fork of [Dakkaron/Fairberry](https://github.com/Dakkaron/Fairberry), which adds a detachable BlackBerry Q10 keyboard to phones. If you want the original phone-focused project (Fairphone 4, Samsung Galaxy A54, etc.), go there instead.
 
-**The goal of this fork is different: get the same physical Q10 keyboard working with e-ink devices, starting with my own [Xteink X4](https://www.xteink.com/products/xteink-x4), and generally with any device that runs the [Free Ink SDK](https://freeink.org/) ([Free-Ink/freeink-sdk](https://github.com/Free-Ink/freeink-sdk)).**
+**The goal of this fork is different: get the same physical Q10 keyboard working with e-ink devices, starting with my own [Xteink X4](https://www.xteink.com/products/xteink-x4), and generally with any device that runs the [Free Ink SDK](https://freeink.org/) ([Free-Ink/freeink-sdk](https://github.com/Free-Ink/freeink-sdk)) or, more broadly, anything that speaks BLE HID.** It's also gaining a BlackBerry-style five-way trackball alongside the keyboard, since that's a real BlackBerry input too and the ESP32 board type has room for it.
 
 The keyboard hardware and the mainboard firmware don't actually know or care what they're plugged into — the mainboard scans the Q10 keyboard's key matrix and outputs the result as either a standard USB HID keyboard (Arduino/custom-mainboard board types) or a Bluetooth LE HID keyboard (ESP32 board type). Retargeting this project at e-ink readers is mostly about:
 
@@ -51,6 +51,8 @@ Demo video of the original phone version: [![Demo video showing the functionalit
 ## How to build it?
 
 Recommended: [Custom mainboard](Documentation/Hardware_Fairberry_Mainboard.md) — use `BOARD_TYPE FAIRBERRY_V0_3_0` (or newer) for a USB-attached keyboard, or `BOARD_TYPE ESP32` for a BLE-attached one.
+
+Want the trackball too? See [Hardware_ESP32_Trackball_Mainboard.md](Documentation/Hardware_ESP32_Trackball_Mainboard.md) — pin plan, BOM, and a working (but hardware-unvalidated) firmware implementation for wiring an ICSH044A BlackBerry trackball alongside the keyboard on `BOARD_TYPE ESP32`. Opt in with `TRACKBALL_ENABLED` in `configuration.h`.
 
 [Old Arduino-based hardware](Documentation/Hardware_Arduinobased.md) also works, same caveats apply.
 

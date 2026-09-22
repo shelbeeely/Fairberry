@@ -17,6 +17,7 @@
 #include "constants.h"
 #include "keymaps.h"
 #include "boards.h"
+#include "trackball.h"
 
 
 bool keys[colCount][rowCount];
@@ -104,9 +105,20 @@ void setup() {
     setKeyboardBacklight(keyboardLight1, keyboardLight2, true);
     lastDebounceMs = millis();
 
-    while (USBDevice.isSuspended()) {}
-    USBCON |= (1 << USBE);
-    USBDevice.attach();
+    // USBDevice/USBCON/USBE are AVR (ATmega32u4) core internals and don't
+    // exist on ESP32 -- this was previously unconditional, which meant
+    // BOARD_TYPE ESP32 could never actually compile. BLE init already
+    // happened above via KEYBOARD_BEGIN(); there's no separate USB
+    // attach step needed on that path.
+    #if BOARD_TYPE != ESP32
+      while (USBDevice.isSuspended()) {}
+      USBCON |= (1 << USBE);
+      USBDevice.attach();
+    #endif
+
+    #if defined(TRACKBALL_ENABLED) && BOARD_TYPE == ESP32
+      trackballInit();
+    #endif
 }
 
 void updateStickyKeyStates() {
@@ -560,6 +572,9 @@ void loop() {
     #ifdef SERIAL_DEBUG_LOG
       Serial.print("matrix: ");
       Serial.println(millis()-startms);
+    #endif
+    #ifdef TRACKBALL_ENABLED
+      trackballPoll();
     #endif
   #if BOARD_TYPE == ESP32
   }

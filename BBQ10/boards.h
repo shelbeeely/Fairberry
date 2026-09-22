@@ -161,7 +161,35 @@
   byte rows[] = {27,25,32,4,0,2,22};
   byte cols[] = {5,23,19,18,26};
 
-  #define KEYBOARD_LIGHT_PIN_1 35
+  // NOTE: this used to be GPIO35, which is one of the ESP32's input-only
+  // ADC pins (34/35/36/39) -- it has no output driver at all, so PWM
+  // backlight control on that pin was never actually possible. Moved to
+  // GPIO13 (a normal bidirectional pin) so this works, and to free up 35
+  // for the trackball's RIGHT line below.
+  #define KEYBOARD_LIGHT_PIN_1 13
+
+  // ICSH044A / SparkFun-style BlackBerry trackball, see trackball.h and
+  // Documentation/Hardware_ESP32_Trackball_Mainboard.md. Only meaningful
+  // if TRACKBALL_ENABLED is defined in configuration.h.
+  //
+  // UP/DOWN/LEFT/RIGHT are on the ESP32's 4 input-only pins (34/35/36/39)
+  // deliberately -- they have no internal pull-up, so these need an
+  // external pull-up resistor to 3.3V per line (see the hardware doc).
+  // BTN uses a normal pin with the ESP32's internal pull-up instead,
+  // since only 4 input-only pins exist and BTN was the 5th line.
+  #define TRACKBALL_UP_PIN 34
+  #define TRACKBALL_DOWN_PIN 36
+  #define TRACKBALL_LEFT_PIN 39
+  #define TRACKBALL_RIGHT_PIN 35
+  #define TRACKBALL_BTN_PIN 14
+
+  // LEDs are optional (TRACKBALL_LED_ENABLED). WHT isn't wired up here --
+  // it wasn't needed for a functional trackball and there wasn't a 4th
+  // free flexible pin left in this pin map; RGB driven together
+  // approximates white if you want that instead of adding a pin for it.
+  #define TRACKBALL_LED_RED_PIN 16
+  #define TRACKBALL_LED_GRN_PIN 17
+  #define TRACKBALL_LED_BLU_PIN 21
 #endif
 
 #ifdef DEBUG_SERIAL_INSTEAD_OF_USB
