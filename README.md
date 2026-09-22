@@ -10,6 +10,19 @@ See [Hardware_Standalone_Smart_Keyboard.md](Documentation/Hardware_Standalone_Sm
 
 The standalone smart keyboard supersedes both for pairing with the X4 specifically, but they're simpler builds if you don't want the battery/mic/speaker/SD/WiFi scope.
 
+## Writer deck: four components, one repo
+
+The keyboard alone is one half of the picture. Combined with an X4 running a FreeInk-SDK writer app, this becomes a full distraction-free writing device -- a "writer deck," in the vein of a Freewrite or AlphaSmart, built from this project's own parts. Four separate-but-interlinked pieces, all in this repo:
+
+| Component | Directory | What it is |
+|---|---|---|
+| Keyboard firmware | [`BBQ10/`](BBQ10) | The physical keyboard + trackball + voice typing, BLE HID |
+| X4 firmware | [`X4Firmware/`](X4Firmware) | The writer app (library + editor screens) running on the X4 |
+| Hardware | [`KiCad/`](KiCad), [`Case/`](Case) | PCB design, 3D-printable case |
+| Web GUI | [`WebGUI/`](WebGUI) | The keyboard-hosted local browser dashboard (implementation lives in `BBQ10/web_server.h`) |
+
+Start with [Hardware_X4_Writer_Deck.md](Documentation/Hardware_X4_Writer_Deck.md) for how the pieces fit together -- it's also the most honestly unproven part of this repo (see its Status section: I read FreeInk SDK's docs site, but never had the actual SDK source or hardware in front of me to compile/test against, unlike the keyboard firmware).
+
 ## Status / known limitation
 
 Good news on the software side: FreeInk SDK has a purpose-built BLE keyboard host — [`BleKeyboardHost`](https://freeink.org/docs/lib-ble) (the `lib-ble` library). Per its docs, it's a real BLE HID **host** (central role) that explicitly supports "keyboards, page turners, remote buttons and similar devices that expose the HID service" — not just page-turner remotes as I originally assumed here. It works on both ESP32-C3 and ESP32-S3 (BLE only, no Bluetooth Classic), which covers the plain X4 (C3) as well as the X4 Classic/Pro (S3). Pairing defaults to "Just Works" (no passkey needed), which is what a keyboard-only peripheral like Fairberry's `BOARD_TYPE ESP32` needs.
