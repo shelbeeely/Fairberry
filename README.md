@@ -13,7 +13,32 @@ The keyboard hardware and the mainboard firmware don't actually know or care wha
 
 Good news on the software side: FreeInk SDK has a purpose-built BLE keyboard host — [`BleKeyboardHost`](https://freeink.org/docs/lib-ble) (the `lib-ble` library). Per its docs, it's a real BLE HID **host** (central role) that explicitly supports "keyboards, page turners, remote buttons and similar devices that expose the HID service" — not just page-turner remotes as I originally assumed here. It works on both ESP32-C3 and ESP32-S3 (BLE only, no Bluetooth Classic), which covers the plain X4 (C3) as well as the X4 Classic/Pro (S3). Pairing defaults to "Just Works" (no passkey needed), which is what a keyboard-only peripheral like Fairberry's `BOARD_TYPE ESP32` needs.
 
-The catch: it's an **opt-in capability**, gated behind the `FREEINK_CAP_BLE_HID_HOST` build flag (off by default) plus adding the NimBLE stack as a dependency. So the real question isn't "does the ecosystem support external keyboards" (it does) — it's "does the specific firmware image flashed on your X4 have that flag turned on." Stock/vendor Xteink firmware almost certainly doesn't; a community firmware or your own FreeInk-SDK build would need to enable it explicitly.
+The catch: it's an **opt-in capability**, gated behind the `FREEINK_CAP_BLE_HID_HOST` build flag (off by default) plus adding the NimBLE stack as a dependency. So the real question isn't "does the ecosystem support external keyboards" (it does) — it's "does the specific firmware image flashed on your X4 have that flag turned on." Stock/vendor Xteink firmware almost certainly doesn't.
+
+Checked directly against [freeink-sdk's `platformio.sample.ini`](https://github.com/Free-Ink/freeink-sdk/blob/main/platformio.sample.ini): the stock `[env:xteink_x4]` build env is just
+
+```ini
+[env:xteink_x4]
+extends = base
+board = esp32-c3-devkitm-1
+build_flags =
+  ${base.build_flags}
+  -DFREEINK_DEVICE_X4=1
+```
+
+— no BLE HID host flag. Building a FreeInk-SDK firmware for the X4 that can actually pair with a Fairberry keyboard means adding, at minimum:
+
+```ini
+build_flags =
+  ${base.build_flags}
+  -DFREEINK_DEVICE_X4=1
+  -DFREEINK_CAP_BLE_HID_HOST=1
+lib_deps =
+  ${base.lib_deps}
+  h2zero/NimBLE-Arduino@^2.3.8
+```
+
+to your own build, then flashing that instead of whatever firmware is on the device now.
 
 I have **not yet confirmed** this end-to-end against a physical X4 — that's the next step. I also haven't found documented USB HID host support in FreeInk SDK for any target, so the USB-attached Fairberry board types (`FAIRBERRY_V0_3_0`, `ARDUINO`) are more speculative than the BLE path right now; BLE (`BOARD_TYPE ESP32`) is the one with an actual matching host-side API to target.
 
