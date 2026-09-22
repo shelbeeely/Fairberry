@@ -7,6 +7,7 @@
  * ARDUINO : The original option, using an Arduino Pro Micro
  * BEETLE : A slightly different version of the original option, using a smaller Beetle board based on the ATMega32u4. Not recommeded, because the beetle has one to few pins, so you have to solder directly to the ATMega32u4.
  * ESP32: Using an ESP32-based board to couple the board using Bluetooth. Power management is still rough (see the power saving options below) and it draws more current than the Arduino path. This is the recommended option for Free Ink SDK devices like the Xteink X4/X4 Classic: the SDK has a purpose-built BLE keyboard host library (BleKeyboardHost / lib-ble, https://freeink.org/docs/lib-ble) that works on ESP32-C3 and ESP32-S3. It's an opt-in firmware capability (FREEINK_CAP_BLE_HID_HOST) though, so confirm the specific firmware image on your device has it enabled before counting on this.
+ * FAIRBERRY_ESP32S3_SMART: A standalone, battery-powered ESP32-S3 board -- keyboard + trackball + mic/speaker/microSD + WiFi voice transcription. Pairs wirelessly with the X4 (or any BLE HID host) instead of physically attaching to it. See Documentation/Hardware_Standalone_Smart_Keyboard.md. This is the option for the mic/speaker/WiFi/Whisper features further down this file -- they're not wired up for plain BOARD_TYPE ESP32.
  */
 #define BOARD_TYPE FAIRBERRY_V0_3_0
 
@@ -102,10 +103,12 @@
 
 /*
  * ## Trackball (ICSH044A / SparkFun BlackBerry Trackballer Breakout clone)
- * Only implemented for BOARD_TYPE ESP32 right now. See boards.h for the
- * pin assignment and trackball.h for the reading/debounce logic, and
- * Documentation/Hardware_ESP32_Trackball_Mainboard.md for wiring/BOM
- * details (pull-up resistors, LED current-limiting, physical mounting).
+ * Implemented for BOARD_TYPE ESP32 and FAIRBERRY_ESP32S3_SMART. See
+ * boards.h for the pin assignment (different per board type) and
+ * trackball.h for the reading/debounce logic. Wiring/BOM details are in
+ * Documentation/Hardware_ESP32_Trackball_Mainboard.md (pull-up resistors,
+ * LED current-limiting, physical mounting) and
+ * Documentation/Hardware_Standalone_Smart_Keyboard.md for the S3 board.
  *
  * Movement is read as raw hall-sensor edges and turned into arrow-key
  * taps once TRACKBALL_EDGES_PER_STEP edges accumulate on an axis; the
@@ -118,3 +121,29 @@
 //#define TRACKBALL_LED_ENABLED // Also drive the trackball's RGB backlight
 //#define TRACKBALL_EDGES_PER_STEP 4
 //#define TRACKBALL_BTN_KEY KEY_RETURN
+
+/*
+ * ## Voice notes + WiFi transcription (BOARD_TYPE FAIRBERRY_ESP32S3_SMART only)
+ * See Documentation/Hardware_Standalone_Smart_Keyboard.md for the full
+ * picture. Summary: AUDIO_ENABLED turns on local mic recording (to WAV on
+ * the SD card) and speaker playback/confirmation tones -- this works fully
+ * offline. WIFI_TRANSCRIPTION_ENABLED additionally connects to WiFi
+ * periodically and uploads any recordings that don't have a matching .txt
+ * yet to the OpenAI Whisper API, saving the returned transcript back to
+ * the SD card. There is no on-device speech recognition -- transcription
+ * requires WiFi and a paid OpenAI API key, and only happens when a sync
+ * runs (manual trigger or once a day), not in real time.
+ *
+ * Requires BBQ10/secrets.h with your WiFi credentials and OpenAI API key
+ * -- copy secrets.h.example and fill it in. secrets.h is gitignored;
+ * never commit real credentials.
+ *
+ * Requires the ArduinoJson library in addition to the ones listed in
+ * Documentation/Hardware_Fairberry_Mainboard.md.
+ */
+//#define AUDIO_ENABLED
+//#define WIFI_TRANSCRIPTION_ENABLED // Requires AUDIO_ENABLED and BBQ10/secrets.h
+#define WHISPER_SYNC_INTERVAL_MS (24L * 60L * 60L * 1000L) // Once a day
+#if defined(WIFI_TRANSCRIPTION_ENABLED)
+  #include "secrets.h"
+#endif

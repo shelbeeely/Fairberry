@@ -1,9 +1,9 @@
 #if BOARD_TYPE == FAIRBERRY_V0_1_1 || BOARD_TYPE == FAIRBERRY_V0_2_0 || BOARD_TYPE == FAIRBERRY_V0_3_0 || BOARD_TYPE == ARDUINO || BOARD_TYPE==BEETLE
   #define CHIP_TYPE CHIP_ATMEGA32U4
-#elif BOARD_TYPE == ESP32
+#elif BOARD_TYPE == ESP32 || BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
   #define CHIP_ESP32
 #else
-  #error "No valid BOARD_TYPE selected. Needs to be any of FAIRBERRY_V0_1_1, FAIRBERRY_V0_2_0, FAIRBERRY_V0_3_0, ARDUINO, BEETLE, ESP32"
+  #error "No valid BOARD_TYPE selected. Needs to be any of FAIRBERRY_V0_1_1, FAIRBERRY_V0_2_0, FAIRBERRY_V0_3_0, ARDUINO, BEETLE, ESP32, FAIRBERRY_ESP32S3_SMART"
 #endif
 
 #if defined(POWERSAVE_ARDUINO_IDLE) && defined(POWERSAVE_ARDUINO_POWERDOWN)
@@ -72,7 +72,7 @@
     #define KEYBOARD_PRESS(key) Keyboard.press(key)
     #define KEYBOARD_RELEASE(key) Keyboard.release(key)
   #endif
-#elif BOARD_TYPE == ESP32
+#elif BOARD_TYPE == ESP32 || BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
   #include "analogWrite.h"
   #define USE_NIMBLE
   #include <BleKeyboard.h>
@@ -190,6 +190,54 @@
   #define TRACKBALL_LED_RED_PIN 16
   #define TRACKBALL_LED_GRN_PIN 17
   #define TRACKBALL_LED_BLU_PIN 21
+#elif BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
+  // Standalone battery-powered board: keyboard + trackball + mic/speaker/SD
+  // + WiFi transcription. See
+  // Documentation/Hardware_Standalone_Smart_Keyboard.md for the full
+  // reasoning and BOM -- this pin table is a starting proposal, not a
+  // verified-correct final assignment (it depends on which GPIOs your
+  // specific S3 module variant actually exposes free of flash/PSRAM use).
+  //
+  // No RESET_PIN here -- that was specific to the FAIRBERRY_* AVR mainboard
+  // hardware revisions, not used on the ESP32 board types.
+  byte rows[] = {1,2,4,5,6,7,8};
+  byte cols[] = {9,10,11,12,13};
+
+  #define KEYBOARD_LIGHT_PIN_1 14
+
+  // Trackball (see trackball.h, TRACKBALL_ENABLED). Unlike classic ESP32,
+  // S3's GPIO 0-21 are all normal bidirectional pins -- no input-only
+  // pins forced onto the direction lines here, though external pull-ups
+  // are still recommended per the trackball doc's sensor-polarity caveat.
+  #define TRACKBALL_UP_PIN 15
+  #define TRACKBALL_DOWN_PIN 16
+  #define TRACKBALL_LEFT_PIN 17
+  #define TRACKBALL_RIGHT_PIN 18
+  // Doubles as the deep-sleep wake button (RTC-capable pin).
+  #define TRACKBALL_BTN_PIN 21
+
+  #define TRACKBALL_LED_RED_PIN 22
+  #define TRACKBALL_LED_GRN_PIN 23
+  #define TRACKBALL_LED_BLU_PIN 24
+
+  // Mic (INMP441-style I2S) -- dedicated I2S port, own clock lines.
+  #define MIC_I2S_WS_PIN 25
+  #define MIC_I2S_BCLK_PIN 33
+  #define MIC_I2S_DIN_PIN 34
+
+  // Speaker (MAX98357A-style I2S amp) -- separate I2S port from the mic.
+  #define SPEAKER_I2S_WS_PIN 35
+  #define SPEAKER_I2S_BCLK_PIN 36
+  #define SPEAKER_I2S_DOUT_PIN 37
+
+  // microSD (SPI)
+  #define SD_CS_PIN 38
+  #define SD_MOSI_PIN 39
+  #define SD_MISO_PIN 40
+  #define SD_SCK_PIN 41
+
+  // Battery voltage divider (only used if not using a fuel gauge over I2C)
+  #define BATTERY_ADC_PIN 42
 #endif
 
 #ifdef DEBUG_SERIAL_INSTEAD_OF_USB

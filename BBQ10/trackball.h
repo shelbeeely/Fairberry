@@ -22,11 +22,11 @@
 // breakout module itself has one, since that wasn't reliably confirmed
 // either. See Documentation/Hardware_ESP32_Trackball_Mainboard.md.
 //
-// Only wired up for BOARD_TYPE ESP32 right now -- IRAM_ATTR and the
-// attachInterrupt(..., CHANGE) pattern used here are ESP32 Arduino core
-// specifics, an AVR port would need pin-change interrupts instead.
+// Only wired up for the ESP32-family board types right now -- IRAM_ATTR
+// and the attachInterrupt(..., CHANGE) pattern used here are ESP32 Arduino
+// core specifics, an AVR port would need pin-change interrupts instead.
 
-#if defined(TRACKBALL_ENABLED) && BOARD_TYPE == ESP32
+#if defined(TRACKBALL_ENABLED) && (BOARD_TYPE == ESP32 || BOARD_TYPE == FAIRBERRY_ESP32S3_SMART)
 
 // Defined further down in BBQ10.ino; forward-declared here since this file
 // is included before that definition and calls it from trackballPoll().

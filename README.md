@@ -1,13 +1,14 @@
 # Fairberry (e-ink fork)
 
-This is a personal fork of [Dakkaron/Fairberry](https://github.com/Dakkaron/Fairberry), which adds a detachable BlackBerry Q10 keyboard to phones. If you want the original phone-focused project (Fairphone 4, Samsung Galaxy A54, etc.), go there instead.
+This is a personal fork of [Dakkaron/Fairberry](https://github.com/Dakkaron/Fairberry), which adds a detachable BlackBerry Q10 keyboard to phones, physically clamped on and wired over USB. If you want that original phone-focused project, go there instead — this fork has moved away from it.
 
-**The goal of this fork is different: get the same physical Q10 keyboard working with e-ink devices, starting with my own [Xteink X4](https://www.xteink.com/products/xteink-x4), and generally with any device that runs the [Free Ink SDK](https://freeink.org/) ([Free-Ink/freeink-sdk](https://github.com/Free-Ink/freeink-sdk)) or, more broadly, anything that speaks BLE HID.** It's also gaining a BlackBerry-style five-way trackball alongside the keyboard, since that's a real BlackBerry input too and the ESP32 board type has room for it.
+**The direction here now: a standalone, battery-powered BlackBerry-style device -- Q10 keyboard, a five-way trackball, a mic and speaker, microSD storage -- that pairs *wirelessly* with the [Xteink X4](https://www.xteink.com/products/xteink-x4) (or any BLE HID host) instead of physically attaching to it.** No separate battery / host-powered-only was the original project's whole philosophy; this fork has deliberately dropped that in favor of its own LiPo battery and its own enclosure, built primarily for e-ink devices running the [Free Ink SDK](https://freeink.org/) but not exclusive to them -- anything that speaks BLE HID keyboard is a valid target.
 
-The keyboard hardware and the mainboard firmware don't actually know or care what they're plugged into — the mainboard scans the Q10 keyboard's key matrix and outputs the result as either a standard USB HID keyboard (Arduino/custom-mainboard board types) or a Bluetooth LE HID keyboard (ESP32 board type). Retargeting this project at e-ink readers is mostly about:
+See [Hardware_Standalone_Smart_Keyboard.md](Documentation/Hardware_Standalone_Smart_Keyboard.md) for the current primary build. Two earlier, simpler stages are still in the repo and still valid if you want something less involved:
+1. [Hardware_Fairberry_Mainboard.md](Documentation/Hardware_Fairberry_Mainboard.md) -- the original USB/BLE keyboard-only mainboard.
+2. [Hardware_ESP32_Trackball_Mainboard.md](Documentation/Hardware_ESP32_Trackball_Mainboard.md) -- adds the trackball, still host-powered, classic ESP32.
 
-1. A case/mount that fits the reader instead of a phone.
-2. Confirming (and where needed, contributing) input support on the reader side, since that's device/firmware-specific.
+The standalone smart keyboard supersedes both for pairing with the X4 specifically, but they're simpler builds if you don't want the battery/mic/speaker/SD/WiFi scope.
 
 ## Status / known limitation
 
@@ -50,13 +51,14 @@ Demo video of the original phone version: [![Demo video showing the functionalit
 
 ## How to build it?
 
-Recommended: [Custom mainboard](Documentation/Hardware_Fairberry_Mainboard.md) — use `BOARD_TYPE FAIRBERRY_V0_3_0` (or newer) for a USB-attached keyboard, or `BOARD_TYPE ESP32` for a BLE-attached one.
+**Standalone smart keyboard (primary build)**: `BOARD_TYPE FAIRBERRY_ESP32S3_SMART` on an ESP32-S3. See [Hardware_Standalone_Smart_Keyboard.md](Documentation/Hardware_Standalone_Smart_Keyboard.md) for the pin plan, BOM (mic, speaker, microSD, LiPo + charger), and firmware. Opt-in flags in `configuration.h`: `TRACKBALL_ENABLED`, `AUDIO_ENABLED` (local recording/playback, fully offline), `WIFI_TRANSCRIPTION_ENABLED` (syncs recordings to the OpenAI Whisper API -- needs `BBQ10/secrets.h`, copy `secrets.h.example`). No enclosure design yet -- see that doc's Enclosure section for why. **None of this is validated against real hardware.**
 
-Want the trackball too? See [Hardware_ESP32_Trackball_Mainboard.md](Documentation/Hardware_ESP32_Trackball_Mainboard.md) — pin plan, BOM, and a working (but hardware-unvalidated) firmware implementation for wiring an ICSH044A BlackBerry trackball alongside the keyboard on `BOARD_TYPE ESP32`. Opt in with `TRACKBALL_ENABLED` in `configuration.h`.
+**Simpler builds**, if you don't want the battery/audio/WiFi scope:
+- [Custom mainboard](Documentation/Hardware_Fairberry_Mainboard.md) — `BOARD_TYPE FAIRBERRY_V0_3_0` (USB) or `BOARD_TYPE ESP32` (BLE), keyboard only.
+- [+ trackball](Documentation/Hardware_ESP32_Trackball_Mainboard.md) — same `BOARD_TYPE ESP32`, adds `TRACKBALL_ENABLED`.
+- [Old Arduino-based hardware](Documentation/Hardware_Arduinobased.md) also still works.
 
-[Old Arduino-based hardware](Documentation/Hardware_Arduinobased.md) also works, same caveats apply.
-
-For the case, use the [Xteink X4 preset](Case/Generator/presets/XteinkX4.scad) as a starting point. It now uses width/thickness measured from a community-made, to-scale device model ([Zorian22's "Xteink X4 device model" on Thingiverse](https://www.thingiverse.com/thing:7287950), 114.2 x 69.2 x 6.2mm) rather than just the rounded marketing spec — better, but still not a full match to the real device shape (button geometry, exact bezel/port position). The preset file has step-by-step instructions for swapping in that actual dummy model file for a proper fit instead of the parametric approximation; I couldn't fetch it automatically since Thingiverse's terms block bots, so that step needs a normal browser download on your end. Print a bottom-only test fit before committing to a full case either way. The original phone presets (Fairphone 4, Samsung Galaxy A54) are still in the repo under `Case/Generator/presets/` in case they're useful as a reference for another device.
+For these simpler, host-attached builds only (not the standalone smart keyboard, which has no case yet), there's a case preset: [Xteink X4 preset](Case/Generator/presets/XteinkX4.scad), built from width/thickness measured off a community-made, to-scale device model ([Zorian22's "Xteink X4 device model" on Thingiverse](https://www.thingiverse.com/thing:7287950), 114.2 x 69.2 x 6.2mm) rather than just the rounded marketing spec — better, but still not a full match to the real device shape. The preset file has step-by-step instructions for swapping in that actual dummy model file for a proper fit instead of the parametric approximation; I couldn't fetch it automatically since Thingiverse's terms block bots, so that step needs a normal browser download on your end. Print a bottom-only test fit before committing to a full case either way. The original phone presets (Fairphone 4, Samsung Galaxy A54) are still in the repo under `Case/Generator/presets/` for reference.
 
 ## How to use it?
 

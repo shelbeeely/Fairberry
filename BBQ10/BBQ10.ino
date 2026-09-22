@@ -8,6 +8,7 @@
 #define ARDUINO 10
 #define BEETLE 1101
 #define ESP32 1102
+#define FAIRBERRY_ESP32S3_SMART 1103
 
 
 #define CHIP_ATMEGA32U4 1
@@ -18,6 +19,9 @@
 #include "keymaps.h"
 #include "boards.h"
 #include "trackball.h"
+#include "storage.h"
+#include "audio.h"
+#include "whisper_sync.h"
 
 
 bool keys[colCount][rowCount];
@@ -61,12 +65,21 @@ void setup() {
     #ifdef LED1_PIN
       pinMode(LED1_PIN, OUTPUT);
     #endif
-    #if BOARD_TYPE == ESP32
+    #if BOARD_TYPE == ESP32 || BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
       KEYBOARD_BEGIN(KeyboardLayout_en_US);
       keyboardInit = true;
-      
+    #endif
+    #if BOARD_TYPE == ESP32
+      // Not run for FAIRBERRY_ESP32S3_SMART: esp_pm_config_esp32_t is a
+      // classic-ESP32-specific struct name that wouldn't compile as-is on
+      // S3 (IDF names this per-chip, e.g. esp_pm_config_esp32s3_t on
+      // older cores, or a generic esp_pm_config_t on newer ones -- rather
+      // than guess which applies to your toolchain, this is just skipped
+      // for now on the S3 board type). More importantly, disabling WiFi
+      // here would break the whole point of that board type, which needs
+      // WiFi for the Whisper sync.
       esp_bt_sleep_enable();
-      
+
       esp_pm_config_esp32_t pm_config;
       pm_config.max_freq_mhz = 80;
       pm_config.min_freq_mhz = 80;
@@ -110,14 +123,22 @@ void setup() {
     // BOARD_TYPE ESP32 could never actually compile. BLE init already
     // happened above via KEYBOARD_BEGIN(); there's no separate USB
     // attach step needed on that path.
-    #if BOARD_TYPE != ESP32
+    #if BOARD_TYPE != ESP32 && BOARD_TYPE != FAIRBERRY_ESP32S3_SMART
       while (USBDevice.isSuspended()) {}
       USBCON |= (1 << USBE);
       USBDevice.attach();
     #endif
 
-    #if defined(TRACKBALL_ENABLED) && BOARD_TYPE == ESP32
+    #if defined(TRACKBALL_ENABLED) && (BOARD_TYPE == ESP32 || BOARD_TYPE == FAIRBERRY_ESP32S3_SMART)
       trackballInit();
+    #endif
+
+    #if defined(AUDIO_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
+      storageInit();
+      audioInit();
+    #endif
+    #if defined(WIFI_TRANSCRIPTION_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
+      whisperInit();
     #endif
 }
 
@@ -542,7 +563,7 @@ void printMatrix() {
 void loop() {
   idleWakeup = false;
   unsigned long startms = millis();
-  #if BOARD_TYPE == ESP32
+  #if BOARD_TYPE == ESP32 || BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
   if (bleKeyboard.isConnected()) {
   #endif
     if (readMatrix(startms-lastDebounceMs)) { // some key changed
@@ -562,11 +583,26 @@ void loop() {
       if (keyActive(K_SYM) && keyPressed(K_ENTER)) {
         idleTimeout = 0;
       }
-    
+
       if ((keyPressed(K_LSH) && keyActive(K_RSH)) || (keyActive(K_LSH) && keyPressed(K_RSH))) {
         cursorMode = !cursorMode;
         resetStickyKeys();
       }
+
+      #if defined(AUDIO_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
+        // SYM + Backspace: toggle voice recording start/stop.
+        if (keyActive(K_SYM) && keyPressed(K_BACKSPACE)) {
+          if (audioRecordingActive) {
+            audioStopRecording();
+            audioPlayTone(1200, 120);
+          } else {
+            String path = storageNextRecordingPath();
+            if (path.length() > 0 && audioStartRecording(path)) {
+              audioPlayTone(1800, 120);
+            }
+          }
+        }
+      #endif
     }
     lastDebounceMs = startms;
     #ifdef SERIAL_DEBUG_LOG
@@ -576,8 +612,17 @@ void loop() {
     #ifdef TRACKBALL_ENABLED
       trackballPoll();
     #endif
-  #if BOARD_TYPE == ESP32
+  #if BOARD_TYPE == ESP32 || BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
   }
+  #endif
+
+  #if defined(AUDIO_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
+    // Runs regardless of BLE connection state -- recording a voice note
+    // shouldn't require an active host connection.
+    audioRecordChunk();
+  #endif
+  #if defined(WIFI_TRANSCRIPTION_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
+    whisperPoll();
   #endif
 
   #ifdef BLINK_IN_CURSOR_MODE
