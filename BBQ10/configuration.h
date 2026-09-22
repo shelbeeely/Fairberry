@@ -140,10 +140,20 @@
  *
  * Requires the ArduinoJson library in addition to the ones listed in
  * Documentation/Hardware_Fairberry_Mainboard.md.
+ *
+ * TRANSFER_MODE_ENABLED adds a separate, local-only feature: SYM + T
+ * toggles a local web server (no cloud, no API key) for browsing and
+ * downloading recordings/transcripts from a browser on the same WiFi
+ * network. Independent of WIFI_TRANSCRIPTION_ENABLED -- you can have
+ * either, both, or neither. Since this device has no screen, turning
+ * transfer mode on types its local URL as keystrokes into whatever's
+ * focused on the paired host rather than displaying it anywhere -- see
+ * web_server.h.
  */
 //#define AUDIO_ENABLED
 //#define WIFI_TRANSCRIPTION_ENABLED // Requires AUDIO_ENABLED and BBQ10/secrets.h
+//#define TRANSFER_MODE_ENABLED // Requires AUDIO_ENABLED and BBQ10/secrets.h (WiFi credentials only, no API key needed for this one)
 #define WHISPER_SYNC_INTERVAL_MS (24L * 60L * 60L * 1000L) // Once a day
-#if defined(WIFI_TRANSCRIPTION_ENABLED)
+#if defined(WIFI_TRANSCRIPTION_ENABLED) || defined(TRANSFER_MODE_ENABLED)
   #include "secrets.h"
 #endif

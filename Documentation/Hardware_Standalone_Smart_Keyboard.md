@@ -78,6 +78,24 @@ Required additional Arduino library: **ArduinoJson** (for parsing the Whisper AP
 - Transcription requires Wi-Fi and an OpenAI API key, and happens only when a sync runs (manual trigger or once daily) -- it is not real-time, and it depends on an external paid API. Recordings made with no Wi-Fi in range just wait on the SD card until the next successful sync.
 - There's no on-device speech recognition of any kind here -- see the earlier conversation in this repo's history for why (a real ASR model doesn't fit in a microcontroller's RAM budget). If you want offline transcription, that's a fundamentally different, much heavier approach (e.g. relaying audio to a more powerful paired host), not something this firmware attempts.
 
+### Local transfer mode (no cloud)
+
+Separate from Whisper sync, `TRANSFER_MODE_ENABLED` adds a local-only web dashboard for browsing and downloading recordings/transcripts over the LAN -- no OpenAI account needed for this one, just WiFi credentials. Toggle with **SYM + T**. `BBQ10/web_server.h` runs a plain HTTP server (`WebServer.h`, built into the ESP32 Arduino core, no extra library needed) listing `/recordings`, with download/stream links for each `.wav` and its `.txt` if one exists.
+
+Since this device has no screen, there's no way to display its own IP address -- on activation it instead **types the local URL as keystrokes** into whatever's currently focused on the paired host, the same BLE HID path used for normal typing. Focus a text field on the X4 (or wherever) before toggling transfer mode on if you want to actually capture the URL; otherwise those keystrokes go wherever the host happens to be focused.
+
+Not implemented: tag filtering (there's no tagging mechanism anywhere in this firmware yet -- recordings are just numbered), and HTTP Range requests aren't specifically handled, so audio scrubbing in a browser's `<audio>` player may or may not work depending on how your browser's player handles a non-seekable stream.
+
+If both `WIFI_TRANSCRIPTION_ENABLED` and `TRANSFER_MODE_ENABLED` are on at once: a scheduled Whisper sync checks whether transfer mode is currently active before disconnecting WiFi at the end of its run, so it won't cut off an in-progress browsing session. They otherwise operate independently.
+
+## Key combos on this board (beyond the base keyboard ones in [UX_Shortcuts_and_Apps.md](UX_Shortcuts_and_Apps.md))
+
+| Combo | Action | Requires |
+|---|---|---|
+| SYM + Backspace | Start/stop voice recording | `AUDIO_ENABLED` |
+| Hold trackball button 2s+ | Trigger a Whisper sync now | `WIFI_TRANSCRIPTION_ENABLED` |
+| SYM + T | Toggle local transfer-mode web dashboard | `TRANSFER_MODE_ENABLED` |
+
 ## Enclosure
 
 Not designed yet. The brief (screwless snap-fit two-half case, internal alignment pins for the board and buttons, rounded edges) is a reasonable, standard approach for a small battery-powered gadget, but the actual dimensions depend on the final PCB size and battery footprint, which don't exist yet -- there's no board layout to design a case around. This is real follow-up work once the electronics are prototyped on a breadboard/perfboard and a rough size is known, not something to draw blind.

@@ -17,7 +17,6 @@
 
 #if defined(WIFI_TRANSCRIPTION_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
 
-#include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <SD.h>
@@ -25,6 +24,14 @@
 
 #define WHISPER_API_HOST "api.openai.com"
 #define WHISPER_API_PATH "/v1/audio/transcriptions"
+
+// If transfer mode (web_server.h) is also enabled and currently active,
+// don't disconnect WiFi out from under it when a sync finishes -- it's
+// included after this file, so this is forward-declared rather than
+// included directly.
+#ifdef TRANSFER_MODE_ENABLED
+  extern bool transferModeActive;
+#endif
 
 unsigned long whisperLastSyncCheckMs = 0;
 bool whisperBtnHeld = false;
@@ -39,26 +46,6 @@ void whisperInit() {
   #ifndef TRACKBALL_ENABLED
     pinMode(TRACKBALL_BTN_PIN, INPUT_PULLUP);
   #endif
-}
-
-bool whisperConnectWifi(unsigned long timeoutMs = 15000) {
-  if (WiFi.status() == WL_CONNECTED) return true;
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < timeoutMs) {
-    delay(200);
-  }
-  if (WiFi.status() == WL_CONNECTED) {
-    configTime(0, 0, "pool.ntp.org", "time.nist.gov"); // UTC; only used for scheduling, not display
-    return true;
-  }
-  return false;
-}
-
-void whisperDisconnectWifi() {
-  WiFi.disconnect(true);
-  WiFi.mode(WIFI_OFF);
 }
 
 time_t whisperReadLastSyncEpoch() {
@@ -163,7 +150,7 @@ void whisperSyncNow() {
     trackballSetLed(0, 0, 60); // dim blue while syncing
   #endif
 
-  if (!whisperConnectWifi()) {
+  if (!wifiConnect()) {
     #ifdef TRACKBALL_LED_ENABLED
       trackballSetLed(60, 0, 0); // red flash: couldn't connect
     #endif
@@ -191,7 +178,13 @@ void whisperSyncNow() {
   time_t now;
   time(&now);
   whisperWriteLastSyncEpoch(now);
-  whisperDisconnectWifi();
+  #ifdef TRANSFER_MODE_ENABLED
+    if (!transferModeActive) {
+      wifiDisconnect();
+    }
+  #else
+    wifiDisconnect();
+  #endif
 
   #ifdef TRACKBALL_LED_ENABLED
     trackballSetLed(anyFailed ? 60 : 0, anyFailed ? 0 : 60, 0); // green if all good, red-ish if something failed

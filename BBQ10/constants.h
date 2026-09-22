@@ -25,3 +25,7 @@
 #define K_BACKSPACE_COL 4
 #define K_BACKSPACE_ROW 3
 #define K_BACKSPACE K_BACKSPACE_COL, K_BACKSPACE_ROW
+
+#define K_T_COL 2
+#define K_T_ROW 2
+#define K_T K_T_COL, K_T_ROW

@@ -21,7 +21,9 @@
 #include "trackball.h"
 #include "storage.h"
 #include "audio.h"
+#include "wifi_conn.h"
 #include "whisper_sync.h"
+#include "web_server.h"
 
 
 bool keys[colCount][rowCount];
@@ -603,6 +605,15 @@ void loop() {
           }
         }
       #endif
+
+      #if defined(TRANSFER_MODE_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
+        // SYM + T: toggle transfer mode (local web dashboard). Types the
+        // URL as keystrokes into the host on activation -- focus a text
+        // field first if you want to actually capture it.
+        if (keyActive(K_SYM) && keyPressed(K_T)) {
+          transferModeToggle();
+        }
+      #endif
     }
     lastDebounceMs = startms;
     #ifdef SERIAL_DEBUG_LOG
@@ -623,6 +634,9 @@ void loop() {
   #endif
   #if defined(WIFI_TRANSCRIPTION_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
     whisperPoll();
+  #endif
+  #if defined(TRANSFER_MODE_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
+    transferModePoll();
   #endif
 
   #ifdef BLINK_IN_CURSOR_MODE
