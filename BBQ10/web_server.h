@@ -24,14 +24,6 @@
 WebServer transferServer(80);
 bool transferModeActive = false;
 
-void typeString(const char *s) {
-  for (const char *c = s; *c != '\0'; c++) {
-    KEYBOARD_PRESS(*c);
-    KEYBOARD_RELEASE(*c);
-    delay(10); // small gap so the host doesn't drop characters typed too fast
-  }
-}
-
 String transferContentType(const String &filename) {
   if (filename.endsWith(".wav")) return "audio/wav";
   if (filename.endsWith(".txt")) return "text/plain";

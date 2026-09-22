@@ -149,11 +149,23 @@
  * transfer mode on types its local URL as keystrokes into whatever's
  * focused on the paired host rather than displaying it anywhere -- see
  * web_server.h.
+ *
+ * VOICE_TYPING_ENABLED is a third, different mode: SYM + V starts/stops
+ * a short recording, and stopping it immediately (not batched) uploads
+ * to Whisper, reads the transcript back out loud via the OpenAI TTS API
+ * so you can verify it heard you right, then waits for Enter (type it
+ * into the host) or Backspace (discard). This is the "voice typing,
+ * verify before sending" flow, separate from the batch sync above (which
+ * is better suited to longer recordings you don't want to wait on). Runs
+ * blocking -- see the comment at the top of voice_typing.h for what that
+ * means in practice. Also needs BBQ10/secrets.h (same OpenAI API key,
+ * it's used for both Whisper and TTS).
  */
 //#define AUDIO_ENABLED
 //#define WIFI_TRANSCRIPTION_ENABLED // Requires AUDIO_ENABLED and BBQ10/secrets.h
 //#define TRANSFER_MODE_ENABLED // Requires AUDIO_ENABLED and BBQ10/secrets.h (WiFi credentials only, no API key needed for this one)
+//#define VOICE_TYPING_ENABLED // Requires AUDIO_ENABLED and BBQ10/secrets.h
 #define WHISPER_SYNC_INTERVAL_MS (24L * 60L * 60L * 1000L) // Once a day
-#if defined(WIFI_TRANSCRIPTION_ENABLED) || defined(TRANSFER_MODE_ENABLED)
+#if defined(WIFI_TRANSCRIPTION_ENABLED) || defined(TRANSFER_MODE_ENABLED) || defined(VOICE_TYPING_ENABLED)
   #include "secrets.h"
 #endif

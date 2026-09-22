@@ -107,6 +107,13 @@ bool audioRecordingActive = false;
 uint32_t audioRecordedBytes = 0;
 
 bool audioStartRecording(const String &path) {
+  // Guards against two different triggers (e.g. the batch-record combo
+  // and the voice-typing combo) both trying to record at once, which
+  // would orphan whichever file was open first without ever closing/
+  // finalizing its WAV header.
+  if (audioRecordingActive) {
+    return false;
+  }
   audioRecordFile = SD.open(path, FILE_WRITE);
   if (!audioRecordFile) {
     return false;
@@ -145,6 +152,18 @@ void audioStopRecording() {
   audioWriteWavHeader(audioRecordFile, audioRecordedBytes);
   audioRecordFile.close();
   audioRecordingActive = false;
+}
+
+// Reconfigures the speaker port's sample rate, then restores it to
+// AUDIO_SAMPLE_RATE. Needed because audio from an external source (like
+// TTS output in tts.h) isn't necessarily at the same rate as what this
+// device records at -- playing it back at the wrong rate would make it
+// sound pitched up/down and wrong-speed.
+void audioSetSpeakerSampleRate(uint32_t rate) {
+  i2s_set_sample_rates(AUDIO_I2S_SPEAKER_PORT, rate);
+}
+void audioResetSpeakerSampleRate() {
+  i2s_set_sample_rates(AUDIO_I2S_SPEAKER_PORT, AUDIO_SAMPLE_RATE);
 }
 
 // Plays a WAV file (blocking -- fine for short confirmation clips, but

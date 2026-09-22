@@ -88,13 +88,25 @@ Not implemented: tag filtering (there's no tagging mechanism anywhere in this fi
 
 If both `WIFI_TRANSCRIPTION_ENABLED` and `TRANSFER_MODE_ENABLED` are on at once: a scheduled Whisper sync checks whether transfer mode is currently active before disconnecting WiFi at the end of its run, so it won't cut off an in-progress browsing session. They otherwise operate independently.
 
+### Voice typing (record, verify by ear, then send)
+
+A third, different mode from the two above: `VOICE_TYPING_ENABLED` gives you an immediate dictate-and-verify loop, closer to a phone's voice-to-text keyboard than to a note-recorder. **SYM + V** starts recording; pressing it again stops and immediately (not batched, not waiting for a daily sync) uploads the clip to Whisper, then sends the returned text to the OpenAI TTS API (`BBQ10/tts.h`, `/v1/audio/speech`) and plays the reply back through the speaker so you can hear whether it transcribed you correctly. After playback, **Enter** confirms and types the text into the host (`BBQ10/keystroke_util.h`'s `typeString()`, the same keystroke path used everywhere else); **Backspace** discards it; a 15-second timeout auto-discards if you walk away.
+
+This is genuinely different from the batch sync -- that one is for a longer recording you're fine waiting on, this one is for a sentence or two you want to send right now, with a chance to catch a bad transcription before it goes out. It reuses `whisperTranscribeToString()` from `whisper_sync.h` (refactored to return text directly rather than only writing to a `.txt` file, so both modes share the same upload code).
+
+**This flow runs blocking, synchronously**, start to finish -- WiFi connect, the Whisper round-trip, the TTS round-trip, playback, and waiting for your confirm keypress all happen with the keyboard/trackball not responding to anything else. Expect a real pause (WiFi connect alone can take several seconds) between stopping the recording and hearing it read back. Making this non-blocking would mean a proper async state machine spanning multiple network round-trips, which is a meaningfully bigger undertaking than this pass -- noted as a known limitation, not attempted here.
+
+Recording for this mode reuses the same underlying `audioStartRecording()`/`audioRecordingActive` state as the batch-record combo (SYM + Backspace) -- `audioStartRecording()` now refuses to start a second recording while one's already active (from either combo), rather than silently corrupting/orphaning whichever one was already running, and both combos play a low failure beep if that happens.
+
 ## Key combos on this board (beyond the base keyboard ones in [UX_Shortcuts_and_Apps.md](UX_Shortcuts_and_Apps.md))
 
 | Combo | Action | Requires |
 |---|---|---|
-| SYM + Backspace | Start/stop voice recording | `AUDIO_ENABLED` |
+| SYM + Backspace | Start/stop voice recording (saved for later batch transcription) | `AUDIO_ENABLED` |
 | Hold trackball button 2s+ | Trigger a Whisper sync now | `WIFI_TRANSCRIPTION_ENABLED` |
 | SYM + T | Toggle local transfer-mode web dashboard | `TRANSFER_MODE_ENABLED` |
+| SYM + V | Start/stop voice typing (immediate transcribe + TTS verify + Enter to send) | `VOICE_TYPING_ENABLED` |
+| Enter / Backspace | Confirm / discard, only while voice typing is waiting on you after playback | `VOICE_TYPING_ENABLED` |
 
 ## Enclosure
 

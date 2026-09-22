@@ -29,3 +29,7 @@
 #define K_T_COL 2
 #define K_T_ROW 2
 #define K_T K_T_COL, K_T_ROW
+
+#define K_V_COL 2
+#define K_V_ROW 4
+#define K_V K_V_COL, K_V_ROW

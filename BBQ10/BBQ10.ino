@@ -23,6 +23,9 @@
 #include "audio.h"
 #include "wifi_conn.h"
 #include "whisper_sync.h"
+#include "tts.h"
+#include "keystroke_util.h"
+#include "voice_typing.h"
 #include "web_server.h"
 
 
@@ -601,6 +604,8 @@ void loop() {
             String path = storageNextRecordingPath();
             if (path.length() > 0 && audioStartRecording(path)) {
               audioPlayTone(1800, 120);
+            } else {
+              audioPlayTone(400, 200); // low beep: couldn't start (e.g. voice typing is already recording)
             }
           }
         }
@@ -612,6 +617,15 @@ void loop() {
         // field first if you want to actually capture it.
         if (keyActive(K_SYM) && keyPressed(K_T)) {
           transferModeToggle();
+        }
+      #endif
+
+      #if defined(VOICE_TYPING_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
+        // SYM + V: start/stop voice typing. Stopping runs the whole
+        // transcribe -> read-back -> confirm flow before returning (see
+        // voice_typing.h's file header for why this blocks).
+        if (keyActive(K_SYM) && keyPressed(K_V)) {
+          voiceTypingToggle();
         }
       #endif
     }

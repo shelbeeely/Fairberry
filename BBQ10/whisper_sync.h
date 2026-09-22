@@ -65,11 +65,12 @@ void whisperWriteLastSyncEpoch(time_t epoch) {
   f.close();
 }
 
-// Uploads one WAV file to the Whisper API and writes the transcript to
-// the matching .txt path. Returns true on success. Streams the file from
-// SD rather than loading it into RAM, since recordings can be several
-// hundred KB to a few MB.
-bool whisperTranscribeFile(const String &wavPath, const String &txtPath) {
+// Uploads one WAV file to the Whisper API and returns the transcript
+// text via outText. Returns true on success. Streams the file from SD
+// rather than loading it into RAM, since recordings can be several
+// hundred KB to a few MB. Shared by the batch sync below and by
+// voice_typing.h's interactive flow.
+bool whisperTranscribeToString(const String &wavPath, String &outText) {
   File audioFile = SD.open(wavPath, FILE_READ);
   if (!audioFile) return false;
   size_t audioSize = audioFile.size();
@@ -137,9 +138,19 @@ bool whisperTranscribeFile(const String &wavPath, const String &txtPath) {
     return false;
   }
 
+  outText = doc["text"].as<const char*>();
+  return true;
+}
+
+// Uploads one WAV file and writes the transcript to the matching .txt
+// path -- what the batch sync below uses.
+bool whisperTranscribeFile(const String &wavPath, const String &txtPath) {
+  String text;
+  if (!whisperTranscribeToString(wavPath, text)) return false;
+
   File txtFile = SD.open(txtPath, FILE_WRITE);
   if (!txtFile) return false;
-  txtFile.print(doc["text"].as<const char*>());
+  txtFile.print(text);
   txtFile.close();
   return true;
 }
