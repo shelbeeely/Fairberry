@@ -10,14 +10,25 @@ FP = {
     'Regulator_Linear:MCP1700x-300xxTT': 'Package_TO_SOT_SMD:SOT-23',
     'Audio:MAX98357A': 'Package_DFN_QFN:TQFN-16-1EP_3x3mm_P0.5mm_EP1.23x1.23mm',
     'Sensor_Audio:ICS-43434': 'Sensor_Audio:InvenSense_ICS-43434-6_3.5x2.65mm',
-    'Connector:Micro_SD_Card': 'Connector_Card:Conn_01x08_MicroSD_Card',
+    # A real, sourceable part -- the previous entry here ("Conn_01x08_MicroSD_Card")
+    # was a guessed name that doesn't exist in KiCad's footprint library; caught
+    # when generating the PCB (pcbnew.FootprintLoad returned None). This one's pad
+    # numbering matches our symbol's pins exactly: 1-8 are the electrical signals,
+    # and four pads all numbered "9" are the shield tabs, matching the symbol's
+    # single SHIELD pin (pin 9) -- confirmed against the real .kicad_mod file.
+    'Connector:Micro_SD_Card': 'Connector_Card:microSD_HC_Wuerth_693072010801',
     'Connector_Generic:Conn_01x02': 'Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',
     'Connector_Generic:Conn_01x04': 'Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical',
     'Connector_Generic:Conn_01x07': 'Connector_PinHeader_2.54mm:PinHeader_1x07_P2.54mm_Vertical',
     'Device:R': 'Resistor_SMD:R_0603_1608Metric',
     'Device:C': 'Capacitor_SMD:C_0603_1608Metric',
     'Device:LED': 'LED_SMD:LED_0603_1608Metric',
-    'Fairberry:BBQ10KBD': 'Fairberry:BM14B(0.8)-24DS-0.4V(53)',
+    # Real footprint (the actual Hirose part), but it lives in this repo's
+    # existing KiCad/FairberryMainboard/modules/Connectors_Hirose_extra.pretty/
+    # library, not a "Fairberry" library -- named accurately here rather than
+    # invented, since the PCB generator resolves this one from a local path
+    # instead of the system kicad-symbols install.
+    'Fairberry:BBQ10KBD': 'Connectors_Hirose_extra:BM14B(0.8)-24DS-0.4V(53)',
 }
 
 # ---- Component instances ----

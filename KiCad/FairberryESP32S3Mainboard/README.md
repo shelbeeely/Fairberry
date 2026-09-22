@@ -4,18 +4,19 @@ KiCad 7 schematic for the standalone smart-keyboard mainboard (ESP32-S3-WROOM-1,
 trackball, mic, speaker amp, microSD, LiPo charger). Pin assignments match
 `BBQ10/boards.h`'s `FAIRBERRY_ESP32S3_SMART` board type exactly.
 
-30 components, 44 verified nets (every net has 2+ pins, no dangling nets).
+31 components, 44 verified nets (every net has 2+ pins, no dangling nets).
 Connectivity uses net labels (`(label "NETNAME" ...)`) on short wire stubs at
 each pin rather than routed point-to-point wires, which is standard KiCad
 practice for pin-dense boards and keeps the sheet readable.
 
 ![Schematic](FairberryESP32S3Mainboard.svg)
 
-This is the schematic only -- no PCB layout (footprint placement/routing)
-exists yet. `FairberryESP32S3Mainboard.svg` is exported straight from the
-`.kicad_sch` via `kicad-cli sch export svg` (see the command below); if you
-change the schematic, regenerate it the same way so the image doesn't go
-stale:
+This is the schematic only -- `FairberryESP32S3Mainboard.kicad_pcb` exists
+(see PCB section below) but only has the netlist imported: footprints sit on
+an unplaced grid with no board outline or routing yet. `FairberryESP32S3Mainboard.svg`
+is exported straight from the `.kicad_sch` via `kicad-cli sch export svg`
+(see the command below); if you change the schematic, regenerate it the
+same way so the image doesn't go stale:
 
 ```sh
 export KICAD7_SYMBOL_DIR=/usr/share/kicad/symbols
@@ -75,6 +76,37 @@ python3 build_sch4.py
 This overwrites `../FairberryESP32S3Mainboard.kicad_sch` and prints every
 net with its pin list, plus a warning for any single-pin (dangling) net.
 
+## Generating the PCB
+
+`kicad-cli`'s `pcb` subcommand only has `export` in KiCad 7 -- there's no
+`pcb import-netlist`, and the GUI's "Update PCB from Schematic" dialog
+isn't exposed to scripting either. `generator/build_pcb.py` does that step
+directly against the `pcbnew` Python API instead: it loads each
+component's real footprint (verifying every one exists on disk -- one
+placeholder footprint name and one wrong library path were caught and
+fixed this way, see `build_sch3.py`'s `FP` dict comments), places them on
+an unrouted grid, and wires every pad to its net by pad *number* (cross-checked
+against each real `.kicad_mod` file, not assumed to equal the schematic
+pin number sight unseen -- e.g. the microSD footprint's shield pin is 4
+physical pads that all share pad number 9, matched by grouping pads by
+number rather than taking the first hit).
+
+```sh
+cd KiCad/FairberryESP32S3Mainboard/generator
+python3 build_pcb.py
+```
+
+This overwrites `../FairberryESP32S3Mainboard.kicad_pcb` and prints the
+footprint/net counts. It needs `pcbnew` (KiCad's Python bindings,
+`/usr/lib/python3/dist-packages/pcbnew.py` + `_pcbnew.so` on this
+environment's install) importable from plain `python3` — no
+`KICAD7_SYMBOL_DIR` or `xvfb` needed for this step, those only matter for
+`kicad-cli`.
+
+**Not done yet:** board outline, footprint placement (beyond "doesn't
+overlap"), and routing. Placement/outline depend on the case's real
+dimensions; routing is real layout work on top of this.
+
 ## Verifying with kicad-cli
 
 `kicad-cli` (KiCad 7) needs `KICAD7_SYMBOL_DIR` set (the environment this was
@@ -91,9 +123,37 @@ xvfb-run -a kicad-cli sch export netlist FairberryESP32S3Mainboard.kicad_sch -o 
 
 Then sanity-check the netlist: every net should have 2+ nodes except a
 short, expected list of no-connects (unused ESP32-S3 strapping pins
-IO0/IO3/IO45/IO46, UART0's RXD0/TXD0 which are intentionally left free,
+IO0/IO3/IO45, the octal-PSRAM-reserved IO35/36/37 (see the Module SKU
+section — RXD0/TXD0 aren't in this list anymore, they carry mic I2S now),
 MAX98357A's NC pins, and J1's MIC pin from the keyboard connector, which
 isn't used since a separate mic — U5 — is on this board).
+
+To check the same thing on the PCB instead of the schematic (useful after
+running `build_pcb.py`, to confirm every pad landed on the net it should
+have):
+
+```sh
+python3 -c "
+import pcbnew
+board = pcbnew.LoadBoard('FairberryESP32S3Mainboard.kicad_pcb')
+netpads = {}
+for fp in board.GetFootprints():
+    for pad in fp.Pads():
+        netpads.setdefault(pad.GetNetname(), 0)
+        netpads[pad.GetNetname()] += 1
+single = [n for n, c in netpads.items() if c == 1 and n]
+print('single-pad (dangling) nets:', single or 'none')
+"
+```
+
+A PCB-only rendering (copper + silkscreen + outline, no schematic-style
+labels) can be exported the same way as the schematic, except `-o` here
+takes a file path directly rather than a directory when `--layers` is
+given:
+
+```sh
+xvfb-run -a kicad-cli pcb export svg FairberryESP32S3Mainboard.kicad_pcb -o /tmp/out.svg --layers F.Cu,F.Silkscreen,Edge.Cuts
+```
 
 ### Pitfalls hit building this (kept here so they don't get re-debugged)
 
@@ -115,3 +175,18 @@ isn't used since a separate mic — U5 — is on this board).
   but `kicad-cli sch export netlist` shows almost everything as
   "unconnected". Always compute `component_position + pin_local_offset`
   with no rounding for the pin end of any wire.
+- **A schematic's `Footprint` property string is never validated against
+  real files.** The microSD footprint (`Connector_Card:Conn_01x08_MicroSD_Card`)
+  was a guessed name that doesn't exist in KiCad's footprint library, and
+  the custom keyboard connector's footprint was referenced under a made-up
+  `Fairberry:` library instead of the real `Connectors_Hirose_extra:` one
+  it actually lives in — both loaded fine as schematic text and only broke
+  when `build_pcb.py` called `pcbnew.FootprintLoad()` on them and got
+  `None`. Nothing catches a bad footprint string until PCB generation.
+- **Footprint pads can outnumber symbol pins**, and pad *numbers* -- not
+  symbol pin numbers assumed to carry over unchanged -- are what has to
+  match. The microSD footprint has 4 physical shield pads that all share
+  pad number 9, corresponding to the symbol's single SHIELD pin; grouping
+  a footprint's pads by `GetNumber()` before assigning nets (rather than
+  taking the first match, or assuming a 1:1 pad-to-pin count) is what
+  catches this.
