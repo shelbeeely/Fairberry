@@ -1,5 +1,7 @@
-// Mic (INMP441-style I2S MEMS mic) and speaker (MAX98357A-style I2S amp)
-// for the standalone smart keyboard (FAIRBERRY_ESP32S3_SMART).
+// Mic (I2S MEMS mic -- ICS-43434 in the KiCad schematic, same kind of
+// part as the INMP441 originally specified in the BOM doc, standard I2S
+// digital mic interface either way) and speaker (MAX98357A-style I2S
+// amp) for the standalone smart keyboard (FAIRBERRY_ESP32S3_SMART).
 //
 // Uses the ESP32 Arduino core's I2S driver (driver/i2s.h). This is written
 // against the common/legacy i2s.h API available across most Arduino-ESP32
@@ -17,7 +19,7 @@
 #if defined(AUDIO_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
 
 #include <driver/i2s.h>
-#include <SD.h>
+#include <SD_MMC.h>
 
 #define AUDIO_SAMPLE_RATE 16000 // 16kHz mono is plenty for voice and keeps files small; also what Whisper expects internally
 #define AUDIO_I2S_MIC_PORT I2S_NUM_0
@@ -114,7 +116,7 @@ bool audioStartRecording(const String &path) {
   if (audioRecordingActive) {
     return false;
   }
-  audioRecordFile = SD.open(path, FILE_WRITE);
+  audioRecordFile = SD_MMC.open(path, FILE_WRITE);
   if (!audioRecordFile) {
     return false;
   }
@@ -169,7 +171,7 @@ void audioResetSpeakerSampleRate() {
 // Plays a WAV file (blocking -- fine for short confirmation clips, but
 // note it stalls the keyboard scan loop while playing).
 void audioPlayWav(const String &path) {
-  File f = SD.open(path, FILE_READ);
+  File f = SD_MMC.open(path, FILE_READ);
   if (!f) return;
   f.seek(44); // skip the header, this doesn't re-parse it -- assumes 16kHz/16-bit/mono like what we write
   i2s_start(AUDIO_I2S_SPEAKER_PORT);

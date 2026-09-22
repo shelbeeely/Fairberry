@@ -194,9 +194,21 @@
   // Standalone battery-powered board: keyboard + trackball + mic/speaker/SD
   // + WiFi transcription. See
   // Documentation/Hardware_Standalone_Smart_Keyboard.md for the full
-  // reasoning and BOM -- this pin table is a starting proposal, not a
-  // verified-correct final assignment (it depends on which GPIOs your
-  // specific S3 module variant actually exposes free of flash/PSRAM use).
+  // reasoning and BOM.
+  //
+  // CORRECTED pin map: the previous version of this table assumed the
+  // ESP32-S3-WROOM-1 module exposes GPIO22-25 and GPIO33-34 as ordinary
+  // pins (true on the classic ESP32, not true here). Verified against
+  // the actual KiCad symbol for this module (RF_Module:ESP32-S3-WROOM-1)
+  // in KiCad/FairberryESP32S3Mainboard/ -- the module only brings out
+  // GPIO 0-21 and 35-48 (26-34 are used internally for flash/PSRAM on
+  // this module). That leaves 28 usable pins after excluding strapping
+  // pins (0,3,45,46) and reserving 19/20 for possible native USB, which
+  // is exactly enough for this board with the RGB trackball LEDs cut
+  // from this revision (see the trackball doc) and SD moved from 4-pin
+  // SPI to 3-pin 1-bit SDMMC (ESP32-S3 has a native SDMMC peripheral;
+  // storage.h now uses SD_MMC.h instead of SD.h+SPI.h) -- there's no
+  // spare pin margin left for anything more.
   //
   // No RESET_PIN here -- that was specific to the FAIRBERRY_* AVR mainboard
   // hardware revisions, not used on the ESP32 board types.
@@ -205,39 +217,69 @@
 
   #define KEYBOARD_LIGHT_PIN_1 14
 
-  // Trackball (see trackball.h, TRACKBALL_ENABLED). Unlike classic ESP32,
-  // S3's GPIO 0-21 are all normal bidirectional pins -- no input-only
-  // pins forced onto the direction lines here, though external pull-ups
-  // are still recommended per the trackball doc's sensor-polarity caveat.
+  // Trackball (see trackball.h, TRACKBALL_ENABLED). S3's GPIO 0-21 are
+  // all normal bidirectional pins -- no input-only pins forced onto the
+  // direction lines here, though external pull-ups are still recommended
+  // per the trackball doc's sensor-polarity caveat.
   #define TRACKBALL_UP_PIN 15
   #define TRACKBALL_DOWN_PIN 16
   #define TRACKBALL_LEFT_PIN 17
   #define TRACKBALL_RIGHT_PIN 18
-  // Doubles as the deep-sleep wake button (RTC-capable pin).
-  #define TRACKBALL_BTN_PIN 21
+  // Not a deep-sleep wake source in this revision -- GPIO48 isn't
+  // RTC-capable, unlike the pin used in the earlier draft. Doubling BTN
+  // as the wake button would need it moved back into the 0-21 RTC-capable
+  // range, trading away whatever else was there; not done here since
+  // there's no spare pin to trade with. A dedicated wake button (or deep
+  // sleep entirely via power switch) is open follow-up work.
+  #define TRACKBALL_BTN_PIN 48
 
-  #define TRACKBALL_LED_RED_PIN 22
-  #define TRACKBALL_LED_GRN_PIN 23
-  #define TRACKBALL_LED_BLU_PIN 24
+  // RGB LEDs cut from this revision -- no pins left after fixing the
+  // GPIO22-25/33-34 mistake above. TRACKBALL_LED_ENABLED will fail to
+  // compile if turned on for this board type until a future revision
+  // adds an I2C GPIO expander or similar.
 
-  // Mic (INMP441-style I2S) -- dedicated I2S port, own clock lines.
-  #define MIC_I2S_WS_PIN 25
-  #define MIC_I2S_BCLK_PIN 33
-  #define MIC_I2S_DIN_PIN 34
+  // Battery monitoring: a DIGITAL low-battery flag, not an analog voltage
+  // reading. Reasoning: ESP32-S3's ADC-capable pins are only GPIO1-10
+  // (ADC1) and GPIO11-20 (ADC2) -- and tracing through every assignment
+  // above, GPIO0-21 is now *entirely* spoken for (keyboard matrix,
+  // backlight, trackball, plus 19/20 reserved for native USB), with
+  // nothing ADC-capable left over. Rather than reshuffle the whole board
+  // again, this uses a
+  // charger/supervisor IC's digital low-battery output instead of
+  // continuous ADC voltage sensing -- a real capability reduction from
+  // the "know the battery percentage" goal in the BOM doc, not a free
+  // substitution. A fuel gauge over I2C (2 pins, doesn't need an
+  // ADC-capable pin) would restore percentage-level monitoring -- unlike
+  // an earlier draft of this comment claimed, this board doesn't
+  // actually use the module's real UART0 (the pins named RXD0/TXD0 on
+  // the KiCad symbol, i.e. GPIO43/44) for anything; those were free the
+  // whole time and are the natural place to add an I2C fuel gauge in a
+  // follow-up revision, at the cost of losing UART0 serial debug/flash
+  // (native USB on 19/20 would remain as the flashing path).
+  #define BATTERY_LOW_PIN 21
 
-  // Speaker (MAX98357A-style I2S amp) -- separate I2S port from the mic.
-  #define SPEAKER_I2S_WS_PIN 35
-  #define SPEAKER_I2S_BCLK_PIN 36
-  #define SPEAKER_I2S_DOUT_PIN 37
+  // Mic (I2S MEMS mic, e.g. ICS-43434 -- see the KiCad schematic; more
+  // readily available with a real KiCad symbol than the INMP441
+  // originally specified in the BOM doc, electrically the same kind of
+  // part) -- dedicated I2S port, own clock lines.
+  #define MIC_I2S_WS_PIN 35
+  #define MIC_I2S_BCLK_PIN 36
+  #define MIC_I2S_DIN_PIN 37
 
-  // microSD (SPI)
-  #define SD_CS_PIN 38
-  #define SD_MOSI_PIN 39
-  #define SD_MISO_PIN 40
-  #define SD_SCK_PIN 41
+  // Speaker (MAX98357A-style I2S amp) -- separate I2S port from the mic,
+  // not sharing clock lines (simpler/lower-risk than a shared-clock
+  // master/slave setup, at the cost of 2 extra pins -- see the doc).
+  #define SPEAKER_I2S_WS_PIN 38
+  #define SPEAKER_I2S_BCLK_PIN 39
+  #define SPEAKER_I2S_DOUT_PIN 40
 
-  // Battery voltage divider (only used if not using a fuel gauge over I2C)
-  #define BATTERY_ADC_PIN 42
+  // microSD via the ESP32-S3's native SDMMC peripheral in 1-bit mode
+  // (CLK/CMD/D0 -- 3 pins) instead of SPI (CS/MOSI/MISO/SCK -- 4 pins).
+  // storage.h uses SD_MMC.h accordingly. This is what makes the pin
+  // budget fit at all -- see the comment at the top of this block.
+  #define SD_MMC_CLK_PIN 41
+  #define SD_MMC_CMD_PIN 42
+  #define SD_MMC_D0_PIN 47
 #endif
 
 #ifdef DEBUG_SERIAL_INSTEAD_OF_USB

@@ -19,7 +19,7 @@
 #if defined(TRANSFER_MODE_ENABLED) && BOARD_TYPE == FAIRBERRY_ESP32S3_SMART
 
 #include <WebServer.h>
-#include <SD.h>
+#include <SD_MMC.h>
 
 WebServer transferServer(80);
 bool transferModeActive = false;
@@ -36,13 +36,13 @@ void transferHandleRoot() {
                 "</head><body><h1>Fairberry notes</h1><table border=1 cellpadding=6>"
                 "<tr><th>Recording</th><th>Transcript</th><th>Audio</th></tr>";
 
-  File dir = SD.open("/recordings");
+  File dir = SD_MMC.open("/recordings");
   File entry = dir.openNextFile();
   while (entry) {
     String name = String(entry.name());
     if (name.endsWith(".wav")) {
       String txtPath = storageTranscriptPathFor("/recordings/" + name);
-      bool hasTranscript = SD.exists(txtPath);
+      bool hasTranscript = SD_MMC.exists(txtPath);
       html += "<tr><td>" + name + "</td><td>";
       if (hasTranscript) {
         html += "<a href=\"/download?file=" + name.substring(0, name.length() - 4) + ".txt\">.txt</a>";
@@ -73,7 +73,7 @@ void transferHandleDownload() {
     return;
   }
   String path = "/recordings/" + filename;
-  File f = SD.open(path, FILE_READ);
+  File f = SD_MMC.open(path, FILE_READ);
   if (!f) {
     transferServer.send(404, "text/plain", "Not found");
     return;

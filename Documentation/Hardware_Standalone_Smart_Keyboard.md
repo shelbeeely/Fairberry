@@ -29,17 +29,20 @@ This is a real change of philosophy from the rest of this repo (the USB/Arduino 
 
 | Peripheral | Suggested part | Interface |
 |---|---|---|
-| Microphone | INMP441 (I2S MEMS mic breakout) | I2S, digital output avoids analog noise pickup |
+| Microphone | ICS-43434 (I2S MEMS mic; same category of part as the INMP441 this doc originally specified, switched to one with a real KiCad symbol available) | I2S, digital output avoids analog noise pickup |
 | Speaker amp | MAX98357A (I2S Class-D amp) + small 8Ω speaker | I2S |
-| Storage | Standard microSD SPI breakout | SPI |
-| Fuel gauge (optional) | MAX17048 | I2C |
+| Storage | microSD (SDMMC 1-bit mode, not SPI -- see Pin plan below for why) | SDMMC |
+| Fuel gauge | Not included in this revision -- no spare pin for it, see the Pin plan's battery-monitoring note | -- |
 | Charger | MCP73831 | Standalone, JST-PH battery connector |
 
 ## Pin plan
 
-**This is a starting proposal, not a verified-final assignment.** ESP32-S3 modules vary in which GPIOs are actually free depending on flash/PSRAM configuration (octal PSRAM variants reserve additional pins beyond the always-reserved SPI flash pins) -- confirm against the datasheet for your specific module (e.g. ESP32-S3-WROOM-1 variant) before wiring anything. The plan below avoids the pins that are *always* reserved (SPI flash, UART0, native USB D+/D-, strapping pins 0/3/45/46) but does not assume a specific PSRAM configuration.
+**Corrected and verified against the real ESP32-S3-WROOM-1 KiCad symbol** (`RF_Module:ESP32-S3-WROOM-1`, used in [`KiCad/FairberryESP32S3Mainboard/`](../KiCad/FairberryESP32S3Mainboard)), not against a guess about which GPIOs a generic "ESP32-S3 module" exposes. An earlier version of this table assumed GPIO22-25 and GPIO33-34 were available (true on the classic ESP32, not true on this module -- they're used internally for flash/PSRAM and aren't brought out to pins at all). The module exposes **GPIO 0-21 and 35-48 as general IO, plus separately-named RXD0/TXD0 pins (this module's real UART0, electrically GPIO44/43)** -- 34 general IO pins, 28 usable after excluding strapping pins (0/3/45/46) and reserving 19/20 for native USB. RXD0/TXD0 aren't used by anything in this design (an earlier draft of this doc mistakenly described the mic as reusing them -- it doesn't, see below) and remain free for serial debug/flashing, or as a future I2C bus for a fuel gauge.
 
-32 GPIOs needed against roughly 25-30 usable on a typical S3 module (depending on PSRAM configuration) -- tight, but it fits with nothing left over for surprises:
+28 pins needed, 28 available -- **this fits with zero spare margin**, which forced two real design changes from the original plan:
+
+- **SD moved from 4-pin SPI to 3-pin SDMMC** (the ESP32-S3's native 1-bit SDMMC peripheral -- `storage.h` uses `SD_MMC.h`, not `SD.h`+`SPI.h`).
+- **RGB trackball LEDs cut from this revision entirely.** There wasn't a pin left for them after fixing the GPIO22-25/33-34 mistake. `TRACKBALL_LED_ENABLED` isn't wired up for this board type -- a future revision would need an I2C GPIO expander or a module with more exposed GPIO.
 
 | Function | Pins | Notes |
 |---|---|---|
@@ -47,17 +50,15 @@ This is a real change of philosophy from the rest of this repo (the USB/Arduino 
 | Keyboard cols (5) | 9,10,11,12,13 | |
 | Keyboard backlight | 14 | |
 | Trackball UP/DOWN/LEFT/RIGHT | 15,16,17,18 | All normal GPIOs on S3 -- internal pull-ups usable, but keep external pull-ups too per the trackball doc's polarity caveat |
-| Trackball BTN | 21 | Doubles as the deep-sleep wake button (RTC-capable pin, `esp_sleep_enable_ext0_wakeup`) -- no separate wake button needed |
-| Trackball LEDs R/G/B | 22,23,24 | Optional |
-| Mic I2S (WS/BCLK/DIN) | 25,33,34 | Dedicated I2S port, not shared with speaker |
-| Speaker I2S (WS/BCLK/DOUT) | 35,36,37 | Separate I2S port from the mic rather than a shared-clock setup, simpler to get right |
-| SD SPI (CS/MOSI/MISO/SCK) | 38,39,40,41 | |
-| Battery voltage ADC | 42 | Skip if using the MAX17048 fuel gauge (I2C) instead, freeing this pin |
-| *(spare)* | 47,48 | Unused headroom -- e.g. an I2C bus for the fuel gauge, or swap in for 33-37 below |
+| Trackball BTN | 48 | Not RTC-capable, so it can't double as a deep-sleep wake source the way an earlier draft of this table assumed -- see boards.h. Deep-sleep wake is open follow-up work. |
+| Battery low-battery flag | 21 | **Digital flag, not an ADC voltage reading** -- every ADC-capable pin (GPIO1-10 and 11-20) is otherwise committed by the time the keyboard matrix, trackball, and USB reservation are accounted for. A real capability reduction from "know the battery percentage": see boards.h's `BATTERY_LOW_PIN` comment for the reasoning and the upgrade path (an I2C fuel gauge, which doesn't need an ADC-capable pin, but does need a pin this board doesn't currently have spare). |
+| Mic I2S (WS/BCLK/DIN) | 35,36,37 | Dedicated I2S port, ordinary GPIOs (not UART0 -- see the correction above). |
+| Speaker I2S (WS/BCLK/DOUT) | 38,39,40 | Separate I2S port from the mic rather than a shared-clock setup, simpler to get right |
+| SD SDMMC (CLK/CMD/D0) | 41,42,47 | 1-bit mode |
 
-GPIO 33-37 (used above for mic+speaker I2S) are the ones that may be reserved on octal-PSRAM module variants -- **check this against your specific module's datasheet first.** If they're reserved on your board, swap the mic/speaker I2S pins with the spare 47/48 plus reclaim one more from elsewhere, or drop to a non-PSRAM module (at the cost of the RAM headroom PSRAM was chosen for in the first place).
+No spare pins remain for anything not already listed here -- a status LED, a dedicated power button, a fuel gauge, anything else would need to displace something above rather than just being added.
 
-If you're hand-wiring a prototype rather than laying out a PCB, get the mic+speaker+SD+keyboard+trackball working incrementally on a breadboard against whatever your specific module actually exposes, rather than treating this table as gospel.
+If you're hand-wiring a prototype rather than using the KiCad board, get the mic+speaker+SD+keyboard+trackball working incrementally on a breadboard, same as any board bring-up.
 
 ## Firmware
 

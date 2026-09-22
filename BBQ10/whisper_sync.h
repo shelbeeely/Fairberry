@@ -19,7 +19,7 @@
 
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
-#include <SD.h>
+#include <SD_MMC.h>
 #include <time.h>
 
 #define WHISPER_API_HOST "api.openai.com"
@@ -49,8 +49,8 @@ void whisperInit() {
 }
 
 time_t whisperReadLastSyncEpoch() {
-  if (!SD.exists("/sync_state.txt")) return 0;
-  File f = SD.open("/sync_state.txt", FILE_READ);
+  if (!SD_MMC.exists("/sync_state.txt")) return 0;
+  File f = SD_MMC.open("/sync_state.txt", FILE_READ);
   if (!f) return 0;
   String line = f.readStringUntil('\n');
   f.close();
@@ -58,7 +58,7 @@ time_t whisperReadLastSyncEpoch() {
 }
 
 void whisperWriteLastSyncEpoch(time_t epoch) {
-  File f = SD.open("/sync_state.txt", FILE_WRITE);
+  File f = SD_MMC.open("/sync_state.txt", FILE_WRITE);
   if (!f) return;
   f.seek(0);
   f.println((long)epoch);
@@ -71,7 +71,7 @@ void whisperWriteLastSyncEpoch(time_t epoch) {
 // hundred KB to a few MB. Shared by the batch sync below and by
 // voice_typing.h's interactive flow.
 bool whisperTranscribeToString(const String &wavPath, String &outText) {
-  File audioFile = SD.open(wavPath, FILE_READ);
+  File audioFile = SD_MMC.open(wavPath, FILE_READ);
   if (!audioFile) return false;
   size_t audioSize = audioFile.size();
 
@@ -148,7 +148,7 @@ bool whisperTranscribeFile(const String &wavPath, const String &txtPath) {
   String text;
   if (!whisperTranscribeToString(wavPath, text)) return false;
 
-  File txtFile = SD.open(txtPath, FILE_WRITE);
+  File txtFile = SD_MMC.open(txtPath, FILE_WRITE);
   if (!txtFile) return false;
   txtFile.print(text);
   txtFile.close();
@@ -168,7 +168,7 @@ void whisperSyncNow() {
     return;
   }
 
-  File dir = SD.open("/recordings");
+  File dir = SD_MMC.open("/recordings");
   bool anyFailed = false;
   File entry = dir.openNextFile();
   while (entry) {
@@ -176,7 +176,7 @@ void whisperSyncNow() {
     if (name.endsWith(".wav")) {
       String wavPath = "/recordings/" + name;
       String txtPath = storageTranscriptPathFor(wavPath);
-      if (!SD.exists(txtPath)) {
+      if (!SD_MMC.exists(txtPath)) {
         bool ok = whisperTranscribeFile(wavPath, txtPath);
         if (!ok) anyFailed = true;
       }

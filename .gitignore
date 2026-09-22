@@ -12,3 +12,6 @@ KiCad/FairberryMainboard/FairberryMainboard-backups/
 *.gto
 *.gbr
 *.gbrjob
+
+__pycache__/
+*.pyc
