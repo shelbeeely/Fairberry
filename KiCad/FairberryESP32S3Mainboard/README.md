@@ -9,6 +9,20 @@ Connectivity uses net labels (`(label "NETNAME" ...)`) on short wire stubs at
 each pin rather than routed point-to-point wires, which is standard KiCad
 practice for pin-dense boards and keeps the sheet readable.
 
+![Schematic](FairberryESP32S3Mainboard.svg)
+
+This is the schematic only -- no PCB layout (footprint placement/routing)
+exists yet. `FairberryESP32S3Mainboard.svg` is exported straight from the
+`.kicad_sch` via `kicad-cli sch export svg` (see the command below); if you
+change the schematic, regenerate it the same way so the image doesn't go
+stale:
+
+```sh
+export KICAD7_SYMBOL_DIR=/usr/share/kicad/symbols
+xvfb-run -a kicad-cli sch export svg FairberryESP32S3Mainboard.kicad_sch -o /tmp/out
+cp /tmp/out/FairberryESP32S3Mainboard.svg FairberryESP32S3Mainboard.svg
+```
+
 ## Module SKU: ESP32-S3-WROOM-1-N16R8
 
 The schematic symbol (`RF_Module:ESP32-S3-WROOM-1`) is generic across every

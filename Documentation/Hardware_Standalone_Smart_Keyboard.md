@@ -37,6 +37,10 @@ This is a real change of philosophy from the rest of this repo (the USB/Arduino 
 
 ## Pin plan
 
+![Mainboard schematic](../KiCad/FairberryESP32S3Mainboard/FairberryESP32S3Mainboard.svg)
+
+*Full schematic (30 components, 44 verified nets) — see [`KiCad/FairberryESP32S3Mainboard/`](../KiCad/FairberryESP32S3Mainboard) for the source `.kicad_sch`, the generator scripts that build it, and how to regenerate/re-verify it with `kicad-cli`. Schematic only — no PCB layout yet.*
+
 **Corrected and verified against the real ESP32-S3-WROOM-1 KiCad symbol** (`RF_Module:ESP32-S3-WROOM-1`, used in [`KiCad/FairberryESP32S3Mainboard/`](../KiCad/FairberryESP32S3Mainboard)), not against a guess about which GPIOs a generic "ESP32-S3 module" exposes. An earlier version of this table assumed GPIO22-25 and GPIO33-34 were available (true on the classic ESP32, not true on this module -- they're used internally for flash/PSRAM and aren't brought out to pins at all). The module exposes **GPIO 0-21 and 35-48 as general IO, plus separately-named RXD0/TXD0 pins (this module's real UART0, electrically GPIO44/43)** -- 34 general IO pins, 28 usable after excluding strapping pins (0/3/45/46) and reserving 19/20 for native USB.
 
 **Module SKU: ESP32-S3-WROOM-1-N16R8** (16MB flash, 8MB octal PSRAM), picked for headroom on audio buffers, the web dashboard, and WiFi/TLS rather than leaving RAM unspecified. This has one real consequence for the pin table below: on any *octal*-PSRAM WROOM-1 SKU (`R8`/`R16V`), GPIO35/36/37 are wired internally to the in-package PSRAM and cannot be used as GPIO -- they simply don't work as signal pins on this SKU, even though the generic schematic symbol still draws them as ordinary pins. (A cheaper quad-PSRAM SKU like `-N16R2`, 2MB PSRAM, wouldn't have this restriction and would need no pin changes -- it's a real tradeoff, not a strictly-better option.) Mic I2S is moved off GPIO35-37 onto GPIO43/44 (the RXD0/TXD0 pins, i.e. UART0) and GPIO46 as a result -- see below.
